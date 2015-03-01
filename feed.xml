@@ -6,8 +6,8 @@
     <atom:link href="http://www.vouov.com/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>星期日, 1 三月 2015 15:54:14 +0800</pubDate>
-    <lastBuildDate>星期日, 1 三月 2015 15:54:14 +0800</lastBuildDate>
+    <pubDate>星期日, 1 三月 2015 22:51:44 +0800</pubDate>
+    <lastBuildDate>星期日, 1 三月 2015 22:51:44 +0800</lastBuildDate>
 
     <item>
       <title>穹顶之下 同呼吸共命运</title>
@@ -37,7 +37,7 @@
   &lt;li&gt;接下来就是在blog目录中content\blog目录下写自己的.md文件，具体请参照markdown语法&lt;/li&gt;
   &lt;li&gt;写好文章就是编译成HTML，运行命令 jbake . &amp;lt;目的路径&amp;gt;,刷新一下浏览器的地址就可以看到你的文章了&lt;/li&gt;
   &lt;li&gt;提交同步自己的github仓库中，就可以通过域名访问最新的内容了&lt;/li&gt;
-&lt;/ul&gt;&lt;p&gt;如果使用中有什么问题可以留言给我，或者通过最底部的多种联系方式联系我！&lt;br/&gt;具体可以参照我的github blog源码：&lt;br/&gt;&lt;a href=&quot;https://github.com/vouov/blog&quot;&gt;blog jbake源码&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;https://github.com/vouov/vouov.github.io&quot;&gt;编译后的blog HTML&lt;/a&gt;&lt;/p&gt;
+&lt;/ul&gt;&lt;p&gt;用到的软件列表如下：&lt;br/&gt;&lt;a href=&quot;http://jbake.org&quot;&gt;Jbake&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;https://highlightjs.org/&quot;&gt;highlightjs&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;http://open.weibo.com/widget/comments.php&quot;&gt;新浪微博留言箱&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;http://share.baidu.com/&quot;&gt;百度分享&lt;/a&gt;&lt;/p&gt;&lt;p&gt;如果使用中有什么问题可以留言给我，或者通过最底部的多种联系方式联系我！&lt;br/&gt;具体可以参照我的github blog源码：&lt;br/&gt;&lt;a href=&quot;https://github.com/vouov/blog&quot;&gt;blog jbake源码&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;https://github.com/vouov/vouov.github.io&quot;&gt;编译后的blog HTML&lt;/a&gt;&lt;/p&gt;
 	</description>
     </item>
     <item>
