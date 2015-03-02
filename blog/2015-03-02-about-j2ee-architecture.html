@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>对于J2EE架构以及开发流程的一些感想</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="keywords" content="">
+	<meta name="generator" content="清晨迷雾">
+
+	<!-- Fav and touch icons -->
+	<link rel="shortcut icon" href="../favicon.ico">
+
+	<!-- Custom CSS -->
+	<link rel="stylesheet" href="../css/pixyll.css" type="text/css">
+
+	<!-- Fonts -->
+	<link href='//fonts.useso.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+	<link href='//fonts.useso.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="../css/highlight/default.css">
+	<script src="../js/highlight.pack.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+	
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?4cd8a5e7fd1b62b1e6a05a5cccebed70";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+</head><body class="">
+  <div class="site-wrap">
+<header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="../" class="site-title">清晨迷雾de小站</a>
+
+      <nav class="site-nav right">
+<a href="../index.html">首页</a>
+<a href="../about.html">关于</a>
+<a href="../feed.xml">订阅</a>
+      </nav>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</header>
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+		<div class="post-header mb2">
+		  <h1 class="py2">对于J2EE架构以及开发流程的一些感想</h1>
+		  <span class="post-meta">2015年03月02日</span>
+		  
+		  <span class="bdsharebuttonbox" style="float:right;"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a><a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a href="#" class="bds_douban" data-cmd="douban" title="分享到豆瓣网"></a><a href="#" class="bds_youdao" data-cmd="youdao" title="分享到有道云笔记"></a><a href="#" class="bds_fbook" data-cmd="fbook" title="分享到Facebook"></a><a href="#" class="bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a><a href="#" class="bds_twi" data-cmd="twi" title="分享到Twitter"></a><a href="#" class="bds_print" data-cmd="print" title="分享到打印"></a></span>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":["mshare","weixin","tsina","douban","youdao","bdhome","thx","ibaidu","taobao","hi","meilishuo","mogujie","fbook","twi","print","copy","linkedin","diandian","huaban","duitang","hx","fx","sdo","qingbiji","people","xinhua","mail","kanshou","isohu","yaolan","wealink","ty","iguba"],"bdPic":"","bdStyle":"1","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+		  
+		  <br style="clear:both;"/>
+		</div>
+
+		<article class="post-content">
+		  <p>工作好久，也接触过不同架构和框架，多少有些感触，总结一下如下：</p>
+<ul>
+  <li>开发阶段，能够让开发人员快速上手，不能有太高的学习成本，最好是常用的Struts，spring，mybatis，hibernate等常用开源框架。提倡不要重复造轮子，最理想情况是升级改造！</li>
+  <li>开发工具能够支持代码规范的自动检查，报错。</li>
+  <li>有持续集成环境不断验证服务，必须有测试用例验证，并且验证代码是否符合规范，不符合规范报错，另外还要做代码覆盖率，注释检查等。做到错误提前发现</li>
+  <li>功能交付前要有代码review</li>
+  <li>测试以及交付阶段产生的功能需求必须跟踪</li>
+  <li>开发过程中遇到的问题和解决方案要沉淀，文档必须迭代。发挥文档应有的功能价值。</li>
+  <li>开发完成后，产品发布时自动发布成分布式或者集群式。开发不用关心如何部署。</li>
+  <li>架构要支持HA，支持故障迁移，支持动态可伸缩</li>
+  <li>产品交付阶段能够实时了解运行情况，监视实时动态，包含服务健康以及服务负载等指标，最好是图形化展示</li>
+  <li>对于不同的项目一定要有协同看板，让团队知道团队的总体目标，让团队成员明确自己的任务，一个任务要具体人员，以及交付时间，以及交付产物有哪些!并且这些产物都是可以验证和review的。在一个固定的周期内要评审回顾。建议以敏捷的方式操作</li>
+  <li>对于项目或者产品研发一定要明确不同角色的具体的流程，流程一定要管控死，流程可以根据迭代情况不断调整，但是调整前必须严格执行。否则就会有破窗效应，影响后续计划的执行，降低流程的执行效率。对于流程中的问题一定要及时弥补和反应，否则也会引起不好的后果。</li>
+  <li>测试要自动化，部署自动化，运维要自动化，尽量减少人工干预，人可以在所有流程环节中，可以设置为最不可信任节点，有可以机器代替的尽量机器执行，做到高度自动化，高度可靠，高度量化！</li>
+</ul>
+		</article>
+		
+		
+<script type="text/javascript">
+(function(){
+var url = "http://widget.weibo.com/distribution/comments.php?width=0&url=auto&border=1&brandline=y&appkey=2941738165&dpc=1";
+url = url.replace("url=auto", "url=" + encodeURIComponent(document.URL)); 
+document.write('<iframe id="WBCommentFrame" src="' + url + '" scrolling="no" frameborder="0" style="width:100%"></iframe>');
+})();
+</script>
+<script src="http://tjs.sjs.sinajs.cn/open/widget/js/widget/comment.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+window.WBComment.init({
+    "id": "WBCommentFrame"
+});
+</script>
+		
+<div class="py2 post-footer">
+    <p>
+  <b>《行路难·其一》</b>
+  <br/>
+作者：李白【唐代】
+<br/>
+    金樽清酒斗十千，玉盘珍羞直万钱。
+<br/>
+	停杯投箸不能食，拔剑四顾心茫然。
+<br/>
+	欲渡黄河冰塞川，将登太行雪满山。
+<br/>
+	闲来垂钓碧溪上，忽复乘舟梦日边。
+<br/>
+	行路难！行路难！多歧路，今安在？
+<br/>
+	长风破浪会有时，直挂云帆济沧海。
+  </p>
+  <p>
+    微信二维码 <br/>
+	<img src="../images/weixin.png" alt="清晨迷雾" style="width:10rem"/>
+	<br/>
+  </p>
+</div>
+
+	
+	
+      </div>
+    </div>
+  </div>
+
+<footer class="footer">
+  <div class="p2 wrap">
+	<div class="measure mt1 center">
+	  <small>
+		版权所有 © 2015 <a href="http://www.vouov.com">vouov</a><br/>
+		Copyright © 2015 <a href="http://www.vouov.com">vouov</a> All rights reserved. <br/>
+		<a href="/archive.html">archive</a>
+	  </small>
+<div class="social-icons">
+  <div class="left">
+    
+      <a class="fa fa-github" href="https://github.com/vouov"></a>
+
+	  <a class="fa fa-rss" href="../feed.xml"></a>
+
+      <a class="fa fa-twitter" href="http://weibo.com/445600369"></a>
+
+      <a class="fa fa-envelope" href="mailto:yuminglong@gmail.com"></a>
+  </div>
+  <div class="right">
+  </div>
+</div>
+<div class="clearfix"></div>
+	</div>
+  </div>
+</footer>
+</body>
+</html>
