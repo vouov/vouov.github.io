@@ -6,9 +6,51 @@
     <atom:link href="http://www.vouov.com/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>星期一, 2 三月 2015 22:30:13 +0800</pubDate>
-    <lastBuildDate>星期一, 2 三月 2015 22:30:13 +0800</lastBuildDate>
+    <pubDate>星期二, 3 三月 2015 17:57:43 +0800</pubDate>
+    <lastBuildDate>星期二, 3 三月 2015 17:57:43 +0800</lastBuildDate>
 
+    <item>
+      <title>Maven使用常见问题</title>
+      <link>http://www.vouov.com/blog/2015-03-03-maven-faq.html</link>
+      <pubDate>星期二, 3 三月 2015 00:00:00 +0800</pubDate>
+      <guid isPermaLink="false">blog/2015-03-03-maven-faq.html</guid>
+      	<description>
+	&lt;ol&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;maven打包时不执行测试用例？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;有时因为测试不能运行,或者为了更快的编译,希望用mvn package的时候跳过test,有如下两种方法：&lt;br/&gt;第一种方法:&lt;/p&gt;
+  &lt;pre&gt;&lt;code&gt;mvn -DskipTests clean package
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;第二种方法&lt;/p&gt;
+  &lt;pre&gt;&lt;code&gt;mvn -Dmaven.test.skip=true clean package
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是这两个命令是有区别的，一定要注意。参数-DskipTests和-Dmaven.test.skip=true，这两个参数的主要区别是：&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;-DskipTests，不执行测试用例，但编译测试用例类生成相应的class文件至target/test-classes下。&lt;/li&gt;
+    &lt;li&gt;-Dmaven.test.skip=true，不执行测试用例，也不编译测试用例类。&lt;/li&gt;
+  &lt;/ul&gt;&lt;p&gt;如果在pom.xml设置了跳过，用命令即使设置跳过也不能覆盖，所以要清理掉xml中配置的&lt;code&gt;&amp;lt;skipTests&amp;gt;false&amp;lt;/skipTests&amp;gt;&lt;/code&gt;:&lt;/p&gt;
+  &lt;pre&gt;&lt;code&gt;&amp;lt;plugin&amp;gt;
+	&amp;lt;groupId&amp;gt;org.apache.maven.plugins&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;maven-surefire-plugin&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;2.10&amp;lt;/version&amp;gt;
+	&amp;lt;configuration&amp;gt;
+		&amp;lt;skipTests&amp;gt;false&amp;lt;/skipTests&amp;gt;
+	&amp;lt;/configuration&amp;gt;
+&amp;lt;/plugin&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;如何手动上传打好的jar包到nexus仓库？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;如果想人工通过mvn命令上传已经存在的jar包到nexus上，执行maven命令如下：&lt;/p&gt;
+  &lt;pre&gt;&lt;code&gt;	mvn deploy:deploy-file 
+	-Durl=http://{ip}:{port}/nexus/content/repositories/{repository-id} 
+	-Dfile=./target/{jar-name}.jar 
+	-DrepositoryId={repository-id}  
+	-DgroupId={group-id} 
+	-DartifactId={artifact-id} 
+	-Dversion={version} 
+	-Dpackaging=jar
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;如何强制每次编译时都从仓库取最新的依赖jar包？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;在执行命令时添加-U参数来强制从仓库取最新的jar包依赖，形如下面的命令：&lt;/p&gt;
+  &lt;pre&gt;&lt;code&gt;mvn -U clean package
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;maven项目模块循环依赖如何解决？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;对于项目因为配置了循环依赖的maven工程，可以通过设定不同的artifactId来达到断掉依赖，从而保证项目能正确编译打包，就涉及到手动上传打好的jar包，并且修改artifactId上传到nexus仓库,手动上传参见第2点。&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+	</description>
+    </item>
     <item>
       <title>对于J2EE架构以及开发流程的一些感想</title>
       <link>http://www.vouov.com/blog/2015-03-02-about-j2ee-architecture.html</link>
