@@ -93,7 +93,7 @@ AES/PCBC/ISO10126Padding      32                          16
 public static byte[] aesZeroPadding(int mode, byte[] data, String password, String iv) throws Exception {
 	SecretKeySpec secretKeySpec = new SecretKeySpec(
 		StringUtils.getBytesUtf8(md5(password).substring(0, 16)), 
-	&quot;AES&quot;);
+		&quot;AES&quot;);
 	Cipher cipher = Cipher.getInstance(&quot;AES/CBC/NoPadding&quot;);
 
 	IvParameterSpec ivParameterSpec = new IvParameterSpec(
