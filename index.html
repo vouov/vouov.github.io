@@ -53,6 +53,65 @@ var _hmt = _hmt || [];
 		<div class="home">
 		  <div class="posts">
 					<div class="post">
+						<a href="blog/2015-03-08-java-html-to-word.html" class="post-link">
+						  <h3 class="h2 post-title">Java中HTML转Word文档实现</h3>
+						  <p class="post-meta">2015年03月08日</p>
+						</a>
+						<p class="post-summary"><p>有这样一个需求,我们要把数据库中的HTML格式文本字段导出为word,尝试了很多方法终于找到一种比较理想的方法.<br/>首先我们把HTML文本通过jsoup整理成xhtml,然后通过docx4j转换成word.<br/>HTML转换成xhtml还有一个jtidy,但是因为好久没有更新,并且有bug,所以推荐使用jsoup来整理.</p><p>docx4j的maven依赖:</p>
+<pre><code class="xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.docx4j&lt;/groupId&gt;
+	&lt;artifactId&gt;docx4j-ImportXHTML&lt;/artifactId&gt;
+	&lt;version&gt;3.2.2&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;org.jsoup&lt;/groupId&gt;
+	&lt;artifactId&gt;jsoup&lt;/artifactId&gt;
+	&lt;version&gt;1.8.1&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre><p>html转成xhtml的jsoup参考实现如下:</p>
+<pre><code class="java">/**
+ * 清理HTML内容,转换成标准xhtml
+ * @param html
+ * @return
+ */
+public static String tidyHtml(String html){
+	Document doc = Jsoup.parse(html);
+	// Clean the document.
+	//doc = new Cleaner(Whitelist.basicWithImages()).clean(doc);
+	doc.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
+	doc.outputSettings().prettyPrint(true);
+
+	doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+	// Get back the string of the body.
+	return doc.html();
+}
+</code></pre><p>xhtml转换成word的java代码参考实现如下:</p>
+<pre><code class="java">/**
+ * html文本转换为word
+ *
+ * @param html
+ * @param baseURL
+ * @param os
+ * @throws Docx4JException
+ */
+public static void html2Docx(String html, String baseURL, OutputStream os) throws Docx4JException {
+
+	// To docx, with content controls
+	WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
+
+	XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
+	//XHTMLImporter.setDivHandler(new DivToSdt());
+	wordMLPackage.getMainDocumentPart().getContent().addAll(
+			XHTMLImporter.convert(html, baseURL));
+
+	/*System.out.println(XmlUtils.marshaltoString(wordMLPackage
+			.getMainDocumentPart().getJaxbElement(), true, true));*/
+
+	wordMLPackage.save(os);
+}
+</code></pre></p>
+					 </div>
+					<div class="post">
 						<a href="blog/2015-03-06-java-RSA.html" class="post-link">
 						  <h3 class="h2 post-title">Java中RSA加密兼容Android实现</h3>
 						  <p class="post-meta">2015年03月06日</p>
@@ -664,13 +723,6 @@ echo($decrypted);
   <li>对于项目或者产品研发一定要明确不同角色的具体的流程，流程一定要管控死，流程可以根据迭代情况不断调整，但是调整前必须严格执行。否则就会有破窗效应，影响后续计划的执行，降低流程的执行效率。对于流程中的问题一定要及时弥补和反应，否则也会引起不好的后果。</li>
   <li>测试要自动化，部署自动化，运维要自动化，尽量减少人工干预，人可以在所有流程环节中，可以设置为最不可信任节点，有可以机器代替的尽量机器执行，做到高度自动化，高度可靠，高度量化！</li>
 </ul></p>
-					 </div>
-					<div class="post">
-						<a href="blog/2015-03-01-caijing.html" class="post-link">
-						  <h3 class="h2 post-title">穹顶之下 同呼吸共命运</h3>
-						  <p class="post-meta">2015年03月01日</p>
-						</a>
-						<p class="post-summary"><p>今天放假，乘着小孩睡觉的时间看了“柴静雾霾调查:穹顶之下 同呼吸共命运”。感触很深，问题发生了，怎么解决才是重中之重。</p><p>希望我家旁边的河流流淌的不再是黑水、臭水，而是中间游着鱼儿，可以垂钓的净水。希望政府可以多做点事情，让家园更加美好，让世界更加美好！愿你我生活的世界都是美好的。</p><h1>发现污染记得拨打12369.这个也许是我们举手之劳。</h1><p><iframe height=498 width=510 src="http://player.youku.com/embed/XOTAxMzQ1NzY0" frameborder=0 allowfullscreen></iframe></p></p>
 					 </div>
 		  </div>
 <div class="pagination clearfix mb1 mt4">
