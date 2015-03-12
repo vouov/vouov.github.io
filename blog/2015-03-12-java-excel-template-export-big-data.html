@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>POI根据Excel模板导出大数据</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="keywords" content="">
+	<meta name="generator" content="清晨迷雾">
+
+	<!-- Fav and touch icons -->
+	<link rel="shortcut icon" href="../favicon.ico">
+
+	<!-- Custom CSS -->
+	<link rel="stylesheet" href="../css/pixyll.css" type="text/css">
+
+	<!-- Fonts -->
+	<link href='//fonts.useso.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+	<link href='//fonts.useso.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="../css/highlight/default.css">
+	<script src="../js/highlight.pack.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+	
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?4cd8a5e7fd1b62b1e6a05a5cccebed70";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+</head><body class="">
+  <div class="site-wrap">
+<header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="../" class="site-title">清晨迷雾de小站</a>
+
+      <nav class="site-nav right">
+<a href="../index.html">首页</a>
+<a href="../about.html">关于</a>
+<a href="../feed.xml">订阅</a>
+      </nav>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</header>
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+		<div class="post-header mb2">
+		  <h1 class="py2">POI根据Excel模板导出大数据</h1>
+		  <span class="post-meta">2015年03月12日</span>
+		  
+		  <span class="bdsharebuttonbox" style="float:right;"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a><a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a href="#" class="bds_douban" data-cmd="douban" title="分享到豆瓣网"></a><a href="#" class="bds_youdao" data-cmd="youdao" title="分享到有道云笔记"></a><a href="#" class="bds_fbook" data-cmd="fbook" title="分享到Facebook"></a><a href="#" class="bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a><a href="#" class="bds_twi" data-cmd="twi" title="分享到Twitter"></a><a href="#" class="bds_print" data-cmd="print" title="分享到打印"></a></span>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":["mshare","weixin","tsina","douban","youdao","bdhome","thx","ibaidu","taobao","hi","meilishuo","mogujie","fbook","twi","print","copy","linkedin","diandian","huaban","duitang","hx","fx","sdo","qingbiji","people","xinhua","mail","kanshou","isohu","yaolan","wealink","ty","iguba"],"bdPic":"","bdStyle":"1","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+		  
+		  <br style="clear:both;"/>
+		</div>
+
+		<article class="post-content">
+		  <p>在一些项目中,需要导出数据, 如果编程实现POI样式等比较麻烦,所以一般根据模板来导出数据,之前使用过JXLS来实现,对于小数据比较好用,但是对于数据量比较大就比较慢,甚至死掉,不能导出.</p><p>经过一段时间研究POI,发现POI的SXSSF支持大数据导出,经过测试有很好的性能.实现有两种思路:</p>
+<ul>
+  <li>通过Excel文件copy样式等, 经过长时间验证和测试,有缺陷,会丢掉一些样式,不能完美达到目标</li>
+  <li>通过修改模板文件,然后直接输出,经过测试验证,这种能够很好的解决大数据导出问题.</li>
+</ul><p>下面我们给出第二种思路的具体实现,经过测试导出5W条数据大概需要4S,这个测试结果非常快. 如果使用标准POI XSSF来实现,会卡死不会输出.</p>
+<pre><code class="java">/**
+     * 根据Excel模板导出数据,支持大数据导出
+     *
+     * @param templateInputStream
+     * @param data
+     * @param outputStream
+     * @param &lt;T&gt;
+     * @throws IOException
+     * @throws InvalidFormatException
+     */
+public static &lt;T&gt; void generateExcel(InputStream templateInputStream, Iterator&lt;T&gt; data, OutputStream outputStream) throws IOException, InvalidFormatException {
+	// 通过类加载器获取模板
+	XSSFWorkbook workbook = new XSSFWorkbook(templateInputStream);
+	XSSFSheet sheet = workbook.getSheetAt(0);
+	XSSFRow row = sheet.getRow(1);
+
+	List&lt;CellStyle&gt; cellStyles = new ArrayList&lt;CellStyle&gt;();
+	List&lt;String&gt; cellValues = new ArrayList&lt;String&gt;();
+	Map&lt;Integer, String&gt; cellFormatMap = new HashMap&lt;Integer, String&gt;();
+	Pattern pattern = Pattern.compile(&quot;^\\$\\{([\\w\\.]+)\\}$&quot;);
+	for (int i = 0; i &lt; row.getLastCellNum(); i++) {
+		XSSFCell cell = row.getCell(i);
+		cellStyles.add(cell.getCellStyle());
+		String cellValue = cell.getStringCellValue();
+		cellValues.add(cellValue);
+		if (cellValue != null) {
+			Matcher matcher = pattern.matcher(cellValue);
+			if (matcher.find()) {
+				cellFormatMap.put(i, matcher.group(1));
+			}
+		}
+	}
+
+	sheet.removeRow(row);
+	SXSSFWorkbook newWorkbook = new SXSSFWorkbook(workbook); // keep 100 rows in memory, exceeding rows will be flushed to disk
+	Sheet newSheet = newWorkbook.getSheetAt(0);
+	int rowNum = 1;
+	while (data.hasNext()) {
+		T t = data.next();
+		JSONObject item = null;
+		if (t instanceof JSONObject) {
+			item = (JSONObject) t;
+		} else {
+			String json = JSON.toJSONString(t);
+			item = JSON.parseObject(json);
+		}
+
+		Row newRow = newSheet.createRow(rowNum);
+		for (int i = 0; i &lt; cellValues.size(); i++) {
+			Cell newCell = newRow.createCell(i);
+			newCell.setCellStyle(cellStyles.get(i));
+			String newCellValue = cellValues.get(i);
+			if (newCellValue != null &amp;&amp; cellFormatMap.containsKey(i)) {
+				newCellValue = JsonUtils.getJSONValue(item, cellFormatMap.get(i));
+			}
+			newCell.setCellValue(newCellValue);
+		}
+
+		rowNum++;
+	}
+	newWorkbook.write(outputStream);
+}
+</code></pre>
+		</article>
+		
+		
+<script type="text/javascript">
+(function(){
+var url = "http://widget.weibo.com/distribution/comments.php?width=0&url=auto&border=1&brandline=y&appkey=2941738165&dpc=1";
+url = url.replace("url=auto", "url=" + encodeURIComponent(document.URL)); 
+document.write('<iframe id="WBCommentFrame" src="' + url + '" scrolling="no" frameborder="0" style="width:100%"></iframe>');
+})();
+</script>
+<script src="http://tjs.sjs.sinajs.cn/open/widget/js/widget/comment.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+window.WBComment.init({
+    "id": "WBCommentFrame"
+});
+</script>
+		
+<div class="py2 post-footer">
+    <p>
+  <b>《行路难·其一》</b>
+  <br/>
+作者：李白【唐代】
+<br/>
+    金樽清酒斗十千，玉盘珍羞直万钱。
+<br/>
+	停杯投箸不能食，拔剑四顾心茫然。
+<br/>
+	欲渡黄河冰塞川，将登太行雪满山。
+<br/>
+	闲来垂钓碧溪上，忽复乘舟梦日边。
+<br/>
+	行路难！行路难！多歧路，今安在？
+<br/>
+	长风破浪会有时，直挂云帆济沧海。
+  </p>
+  <p>
+    微信二维码 <br/>
+	<img src="../images/weixin.png" alt="清晨迷雾" style="width:10rem"/>
+	<br/>
+  </p>
+</div>
+
+	
+	
+      </div>
+    </div>
+  </div>
+
+<footer class="footer">
+  <div class="p2 wrap">
+	<div class="measure mt1 center">
+	  <small>
+		版权所有 © 2015 <a href="http://www.vouov.com">vouov</a><br/>
+		Copyright © 2015 <a href="http://www.vouov.com">vouov</a> All rights reserved. <br/>
+		<a href="/archive.html">archive</a>
+	  </small>
+<div class="social-icons">
+  <div class="left">
+    
+      <a class="fa fa-github" href="https://github.com/vouov"></a>
+
+	  <a class="fa fa-rss" href="../feed.xml"></a>
+
+      <a class="fa fa-twitter" href="http://weibo.com/445600369"></a>
+
+      <a class="fa fa-envelope" href="mailto:yuminglong@gmail.com"></a>
+  </div>
+  <div class="right">
+  </div>
+</div>
+<div class="clearfix"></div>
+	</div>
+  </div>
+</footer>
+</body>
+</html>

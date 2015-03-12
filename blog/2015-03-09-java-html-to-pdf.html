@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Java中HTML转PDF文档实现</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="keywords" content="">
+	<meta name="generator" content="清晨迷雾">
+
+	<!-- Fav and touch icons -->
+	<link rel="shortcut icon" href="../favicon.ico">
+
+	<!-- Custom CSS -->
+	<link rel="stylesheet" href="../css/pixyll.css" type="text/css">
+
+	<!-- Fonts -->
+	<link href='//fonts.useso.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+	<link href='//fonts.useso.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="../css/highlight/default.css">
+	<script src="../js/highlight.pack.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+	
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?4cd8a5e7fd1b62b1e6a05a5cccebed70";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+</head><body class="">
+  <div class="site-wrap">
+<header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="../" class="site-title">清晨迷雾de小站</a>
+
+      <nav class="site-nav right">
+<a href="../index.html">首页</a>
+<a href="../about.html">关于</a>
+<a href="../feed.xml">订阅</a>
+      </nav>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</header>
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+		<div class="post-header mb2">
+		  <h1 class="py2">Java中HTML转PDF文档实现</h1>
+		  <span class="post-meta">2015年03月09日</span>
+		  
+		  <span class="bdsharebuttonbox" style="float:right;"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a><a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a href="#" class="bds_douban" data-cmd="douban" title="分享到豆瓣网"></a><a href="#" class="bds_youdao" data-cmd="youdao" title="分享到有道云笔记"></a><a href="#" class="bds_fbook" data-cmd="fbook" title="分享到Facebook"></a><a href="#" class="bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a><a href="#" class="bds_twi" data-cmd="twi" title="分享到Twitter"></a><a href="#" class="bds_print" data-cmd="print" title="分享到打印"></a></span>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":["mshare","weixin","tsina","douban","youdao","bdhome","thx","ibaidu","taobao","hi","meilishuo","mogujie","fbook","twi","print","copy","linkedin","diandian","huaban","duitang","hx","fx","sdo","qingbiji","people","xinhua","mail","kanshou","isohu","yaolan","wealink","ty","iguba"],"bdPic":"","bdStyle":"1","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+		  
+		  <br style="clear:both;"/>
+		</div>
+
+		<article class="post-content">
+		  <p>之前我们讲述了如果通过html转换成word文档,现在我们讲述如何通过java实现转换HTML为PDF文档.<br/>首先我们把HTML文本通过jsoup整理成xhtml,然后通过flying-saucer-pdf-itext5或者itextpdf xmlworker转换成PDF.<br/>对于flying-saucer和itextpdf xmlworker都可以转换xhtml为PDF,但是在使用中我们发现flying-saucer对于样式的转换更加自然,而itextpdf的转换会丢失部分样式,所以接下来我们会给出两种实现方式,方便根据需要选择其中一种.</p><p>itextpdf xmlworker的maven依赖:</p>
+<pre><code class="xml">&lt;dependency&gt;
+	&lt;groupId&gt;com.itextpdf&lt;/groupId&gt;
+	&lt;artifactId&gt;itextpdf&lt;/artifactId&gt;
+	&lt;version&gt;5.5.4&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;com.itextpdf.tool&lt;/groupId&gt;
+	&lt;artifactId&gt;xmlworker&lt;/artifactId&gt;
+	&lt;version&gt;5.5.4&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre><p>flying-saucer的maven依赖:</p>
+<pre><code class="xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.xhtmlrenderer&lt;/groupId&gt;
+	&lt;artifactId&gt;flying-saucer-pdf-itext5&lt;/artifactId&gt;
+	&lt;version&gt;9.0.7&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre><p>html转成xhtml的jsoup参考实现如下:</p>
+<pre><code class="java">/**
+ * 清理HTML内容,转换成标准xhtml
+ * @param html
+ * @return
+ */
+public static String tidyHtml(String html){
+	Document doc = Jsoup.parse(html);
+	// Clean the document.
+	//doc = new Cleaner(Whitelist.basicWithImages()).clean(doc);
+	doc.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
+	doc.outputSettings().prettyPrint(true);
+
+	doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+	// Get back the string of the body.
+	return doc.html();
+}
+</code></pre><p>html转换成PDF的itextpdf xmlworker代码参考实现如下:</p>
+<pre><code class="java">/**
+ * 使用IText默认实现
+ *
+ * @param html
+ * @param baseURL
+ * @param os
+ * @throws DocumentException
+ * @throws IOException
+ */
+public static void html2Pdf(String html, String baseURL, OutputStream os) throws DocumentException, IOException {
+	String xhtml = HtmlUtils.tidyHtml(html);
+	xhtml = HtmlUtils.fillImageURL(xhtml, baseURL, null);
+	// step 1
+	Document document = new Document();
+	// step 2
+	PdfWriter writer = PdfWriter.getInstance(document, os);
+	// step 3
+	document.open();
+	// step 4
+	XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(xhtml.getBytes(&quot;UTF-8&quot;)), Charset.forName(&quot;UTF-8&quot;));
+	//step 5
+	document.close();
+}
+</code></pre><p>html转换成PDF的flying-saucer代码参考实现如下:</p>
+<pre><code class="java">/**
+ * 使用flying-saucer-pdf-itext5实现
+ *
+ * @param html
+ * @param baseURL
+ * @param os
+ * @throws IOException
+ * @throws DocumentException
+ */
+public static void html2Pdf(String html, String baseURL, OutputStream os) throws IOException, DocumentException {
+	ITextRenderer renderer = new ITextRenderer();
+	String xhtml = HtmlUtils.tidyHtml(html);
+
+	renderer.setDocumentFromString(xhtml, baseURL);
+
+	// 解决中文支持问题
+	ITextFontResolver fontResolver = renderer.getFontResolver();
+	fontResolver.addFont(&quot;C:/Windows/Fonts/SIMSUN.TTC&quot;, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
+	//解决图片的相对路径问题
+	renderer.getSharedContext().setBaseURL(baseURL);
+	renderer.layout();
+	renderer.createPDF(os);
+}
+</code></pre>
+		</article>
+		
+		
+<script type="text/javascript">
+(function(){
+var url = "http://widget.weibo.com/distribution/comments.php?width=0&url=auto&border=1&brandline=y&appkey=2941738165&dpc=1";
+url = url.replace("url=auto", "url=" + encodeURIComponent(document.URL)); 
+document.write('<iframe id="WBCommentFrame" src="' + url + '" scrolling="no" frameborder="0" style="width:100%"></iframe>');
+})();
+</script>
+<script src="http://tjs.sjs.sinajs.cn/open/widget/js/widget/comment.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+window.WBComment.init({
+    "id": "WBCommentFrame"
+});
+</script>
+		
+<div class="py2 post-footer">
+    <p>
+  <b>《行路难·其一》</b>
+  <br/>
+作者：李白【唐代】
+<br/>
+    金樽清酒斗十千，玉盘珍羞直万钱。
+<br/>
+	停杯投箸不能食，拔剑四顾心茫然。
+<br/>
+	欲渡黄河冰塞川，将登太行雪满山。
+<br/>
+	闲来垂钓碧溪上，忽复乘舟梦日边。
+<br/>
+	行路难！行路难！多歧路，今安在？
+<br/>
+	长风破浪会有时，直挂云帆济沧海。
+  </p>
+  <p>
+    微信二维码 <br/>
+	<img src="../images/weixin.png" alt="清晨迷雾" style="width:10rem"/>
+	<br/>
+  </p>
+</div>
+
+	
+	
+      </div>
+    </div>
+  </div>
+
+<footer class="footer">
+  <div class="p2 wrap">
+	<div class="measure mt1 center">
+	  <small>
+		版权所有 © 2015 <a href="http://www.vouov.com">vouov</a><br/>
+		Copyright © 2015 <a href="http://www.vouov.com">vouov</a> All rights reserved. <br/>
+		<a href="/archive.html">archive</a>
+	  </small>
+<div class="social-icons">
+  <div class="left">
+    
+      <a class="fa fa-github" href="https://github.com/vouov"></a>
+
+	  <a class="fa fa-rss" href="../feed.xml"></a>
+
+      <a class="fa fa-twitter" href="http://weibo.com/445600369"></a>
+
+      <a class="fa fa-envelope" href="mailto:yuminglong@gmail.com"></a>
+  </div>
+  <div class="right">
+  </div>
+</div>
+<div class="clearfix"></div>
+	</div>
+  </div>
+</footer>
+</body>
+</html>

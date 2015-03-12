@@ -53,6 +53,169 @@ var _hmt = _hmt || [];
 		<div class="home">
 		  <div class="posts">
 					<div class="post">
+						<a href="blog/2015-03-12-java-excel-template-export-big-data.html" class="post-link">
+						  <h3 class="h2 post-title">POI根据Excel模板导出大数据</h3>
+						  <p class="post-meta">2015年03月12日</p>
+						</a>
+						<p class="post-summary"><p>在一些项目中,需要导出数据, 如果编程实现POI样式等比较麻烦,所以一般根据模板来导出数据,之前使用过JXLS来实现,对于小数据比较好用,但是对于数据量比较大就比较慢,甚至死掉,不能导出.</p><p>经过一段时间研究POI,发现POI的SXSSF支持大数据导出,经过测试有很好的性能.实现有两种思路:</p>
+<ul>
+  <li>通过Excel文件copy样式等, 经过长时间验证和测试,有缺陷,会丢掉一些样式,不能完美达到目标</li>
+  <li>通过修改模板文件,然后直接输出,经过测试验证,这种能够很好的解决大数据导出问题.</li>
+</ul><p>下面我们给出第二种思路的具体实现,经过测试导出5W条数据大概需要4S,这个测试结果非常快. 如果使用标准POI XSSF来实现,会卡死不会输出.</p>
+<pre><code class="java">/**
+     * 根据Excel模板导出数据,支持大数据导出
+     *
+     * @param templateInputStream
+     * @param data
+     * @param outputStream
+     * @param &lt;T&gt;
+     * @throws IOException
+     * @throws InvalidFormatException
+     */
+public static &lt;T&gt; void generateExcel(InputStream templateInputStream, Iterator&lt;T&gt; data, OutputStream outputStream) throws IOException, InvalidFormatException {
+	// 通过类加载器获取模板
+	XSSFWorkbook workbook = new XSSFWorkbook(templateInputStream);
+	XSSFSheet sheet = workbook.getSheetAt(0);
+	XSSFRow row = sheet.getRow(1);
+
+	List&lt;CellStyle&gt; cellStyles = new ArrayList&lt;CellStyle&gt;();
+	List&lt;String&gt; cellValues = new ArrayList&lt;String&gt;();
+	Map&lt;Integer, String&gt; cellFormatMap = new HashMap&lt;Integer, String&gt;();
+	Pattern pattern = Pattern.compile(&quot;^\\$\\{([\\w\\.]+)\\}$&quot;);
+	for (int i = 0; i &lt; row.getLastCellNum(); i++) {
+		XSSFCell cell = row.getCell(i);
+		cellStyles.add(cell.getCellStyle());
+		String cellValue = cell.getStringCellValue();
+		cellValues.add(cellValue);
+		if (cellValue != null) {
+			Matcher matcher = pattern.matcher(cellValue);
+			if (matcher.find()) {
+				cellFormatMap.put(i, matcher.group(1));
+			}
+		}
+	}
+
+	sheet.removeRow(row);
+	SXSSFWorkbook newWorkbook = new SXSSFWorkbook(workbook); // keep 100 rows in memory, exceeding rows will be flushed to disk
+	Sheet newSheet = newWorkbook.getSheetAt(0);
+	int rowNum = 1;
+	while (data.hasNext()) {
+		T t = data.next();
+		JSONObject item = null;
+		if (t instanceof JSONObject) {
+			item = (JSONObject) t;
+		} else {
+			String json = JSON.toJSONString(t);
+			item = JSON.parseObject(json);
+		}
+
+		Row newRow = newSheet.createRow(rowNum);
+		for (int i = 0; i &lt; cellValues.size(); i++) {
+			Cell newCell = newRow.createCell(i);
+			newCell.setCellStyle(cellStyles.get(i));
+			String newCellValue = cellValues.get(i);
+			if (newCellValue != null &amp;&amp; cellFormatMap.containsKey(i)) {
+				newCellValue = JsonUtils.getJSONValue(item, cellFormatMap.get(i));
+			}
+			newCell.setCellValue(newCellValue);
+		}
+
+		rowNum++;
+	}
+	newWorkbook.write(outputStream);
+}
+</code></pre></p>
+					 </div>
+					<div class="post">
+						<a href="blog/2015-03-09-java-html-to-pdf.html" class="post-link">
+						  <h3 class="h2 post-title">Java中HTML转PDF文档实现</h3>
+						  <p class="post-meta">2015年03月09日</p>
+						</a>
+						<p class="post-summary"><p>之前我们讲述了如果通过html转换成word文档,现在我们讲述如何通过java实现转换HTML为PDF文档.<br/>首先我们把HTML文本通过jsoup整理成xhtml,然后通过flying-saucer-pdf-itext5或者itextpdf xmlworker转换成PDF.<br/>对于flying-saucer和itextpdf xmlworker都可以转换xhtml为PDF,但是在使用中我们发现flying-saucer对于样式的转换更加自然,而itextpdf的转换会丢失部分样式,所以接下来我们会给出两种实现方式,方便根据需要选择其中一种.</p><p>itextpdf xmlworker的maven依赖:</p>
+<pre><code class="xml">&lt;dependency&gt;
+	&lt;groupId&gt;com.itextpdf&lt;/groupId&gt;
+	&lt;artifactId&gt;itextpdf&lt;/artifactId&gt;
+	&lt;version&gt;5.5.4&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;com.itextpdf.tool&lt;/groupId&gt;
+	&lt;artifactId&gt;xmlworker&lt;/artifactId&gt;
+	&lt;version&gt;5.5.4&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre><p>flying-saucer的maven依赖:</p>
+<pre><code class="xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.xhtmlrenderer&lt;/groupId&gt;
+	&lt;artifactId&gt;flying-saucer-pdf-itext5&lt;/artifactId&gt;
+	&lt;version&gt;9.0.7&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre><p>html转成xhtml的jsoup参考实现如下:</p>
+<pre><code class="java">/**
+ * 清理HTML内容,转换成标准xhtml
+ * @param html
+ * @return
+ */
+public static String tidyHtml(String html){
+	Document doc = Jsoup.parse(html);
+	// Clean the document.
+	//doc = new Cleaner(Whitelist.basicWithImages()).clean(doc);
+	doc.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
+	doc.outputSettings().prettyPrint(true);
+
+	doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+	// Get back the string of the body.
+	return doc.html();
+}
+</code></pre><p>html转换成PDF的itextpdf xmlworker代码参考实现如下:</p>
+<pre><code class="java">/**
+ * 使用IText默认实现
+ *
+ * @param html
+ * @param baseURL
+ * @param os
+ * @throws DocumentException
+ * @throws IOException
+ */
+public static void html2Pdf(String html, String baseURL, OutputStream os) throws DocumentException, IOException {
+	String xhtml = HtmlUtils.tidyHtml(html);
+	xhtml = HtmlUtils.fillImageURL(xhtml, baseURL, null);
+	// step 1
+	Document document = new Document();
+	// step 2
+	PdfWriter writer = PdfWriter.getInstance(document, os);
+	// step 3
+	document.open();
+	// step 4
+	XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(xhtml.getBytes(&quot;UTF-8&quot;)), Charset.forName(&quot;UTF-8&quot;));
+	//step 5
+	document.close();
+}
+</code></pre><p>html转换成PDF的flying-saucer代码参考实现如下:</p>
+<pre><code class="java">/**
+ * 使用flying-saucer-pdf-itext5实现
+ *
+ * @param html
+ * @param baseURL
+ * @param os
+ * @throws IOException
+ * @throws DocumentException
+ */
+public static void html2Pdf(String html, String baseURL, OutputStream os) throws IOException, DocumentException {
+	ITextRenderer renderer = new ITextRenderer();
+	String xhtml = HtmlUtils.tidyHtml(html);
+
+	renderer.setDocumentFromString(xhtml, baseURL);
+
+	// 解决中文支持问题
+	ITextFontResolver fontResolver = renderer.getFontResolver();
+	fontResolver.addFont(&quot;C:/Windows/Fonts/SIMSUN.TTC&quot;, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
+	//解决图片的相对路径问题
+	renderer.getSharedContext().setBaseURL(baseURL);
+	renderer.layout();
+	renderer.createPDF(os);
+}
+</code></pre></p>
+					 </div>
+					<div class="post">
 						<a href="blog/2015-03-08-java-html-to-word.html" class="post-link">
 						  <h3 class="h2 post-title">Java中HTML转Word文档实现</h3>
 						  <p class="post-meta">2015年03月08日</p>
@@ -662,67 +825,6 @@ $encryptedData = base64_decode($encrypted);
 $decrypted = mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $privateKey, $encryptedData, MCRYPT_MODE_CBC, $iv);
 echo($decrypted);
 </code></pre></p>
-					 </div>
-					<div class="post">
-						<a href="blog/2015-03-03-maven-faq.html" class="post-link">
-						  <h3 class="h2 post-title">Maven使用常见问题</h3>
-						  <p class="post-meta">2015年03月03日</p>
-						</a>
-						<p class="post-summary"><ol>
-  <li><p><strong>maven打包时不执行测试用例？</strong></p><p>有时因为测试不能运行,或者为了更快的编译,希望用mvn package的时候跳过test,有如下两种方法：<br/>第一种方法:</p>
-  <pre><code>mvn -DskipTests clean package
-</code></pre><p>第二种方法</p>
-  <pre><code>mvn -Dmaven.test.skip=true clean package
-</code></pre><p>但是这两个命令是有区别的，一定要注意。参数-DskipTests和-Dmaven.test.skip=true，这两个参数的主要区别是：</p>
-  <ul>
-    <li>-DskipTests，不执行测试用例，但编译测试用例类生成相应的class文件至target/test-classes下。</li>
-    <li>-Dmaven.test.skip=true，不执行测试用例，也不编译测试用例类。</li>
-  </ul><p>如果在pom.xml设置了跳过，用命令即使设置跳过也不能覆盖，所以要清理掉xml中配置的<code>&lt;skipTests&gt;false&lt;/skipTests&gt;</code>:</p>
-  <pre><code>&lt;plugin&gt;
-	&lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-	&lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
-	&lt;version&gt;2.10&lt;/version&gt;
-	&lt;configuration&gt;
-		&lt;skipTests&gt;false&lt;/skipTests&gt;
-	&lt;/configuration&gt;
-&lt;/plugin&gt;
-</code></pre></li>
-  <li><p><strong>如何手动上传打好的jar包到nexus仓库？</strong></p><p>如果想人工通过mvn命令上传已经存在的jar包到nexus上，执行maven命令如下：</p>
-  <pre><code>	mvn deploy:deploy-file 
-	-Durl=http://{ip}:{port}/nexus/content/repositories/{repository-id} 
-	-Dfile=./target/{jar-name}.jar 
-	-DrepositoryId={repository-id}  
-	-DgroupId={group-id} 
-	-DartifactId={artifact-id} 
-	-Dversion={version} 
-	-Dpackaging=jar
-</code></pre></li>
-  <li><p><strong>如何强制每次编译时都从仓库取最新的依赖jar包？</strong></p><p>在执行命令时添加-U参数来强制从仓库取最新的jar包依赖，形如下面的命令：</p>
-  <pre><code>mvn -U clean package
-</code></pre></li>
-  <li><p><strong>maven项目模块循环依赖如何解决？</strong></p><p>对于项目因为配置了循环依赖的maven工程，可以通过设定不同的artifactId来达到断掉依赖，从而保证项目能正确编译打包，就涉及到手动上传打好的jar包，并且修改artifactId上传到nexus仓库,手动上传参见第2点。</p></li>
-</ol></p>
-					 </div>
-					<div class="post">
-						<a href="blog/2015-03-02-about-j2ee-architecture.html" class="post-link">
-						  <h3 class="h2 post-title">对于J2EE架构以及开发流程的一些感想</h3>
-						  <p class="post-meta">2015年03月02日</p>
-						</a>
-						<p class="post-summary"><p>工作好久，也接触过不同架构和框架，多少有些感触，总结一下如下：</p>
-<ul>
-  <li>开发阶段，能够让开发人员快速上手，不能有太高的学习成本，最好是常用的Struts，spring，mybatis，hibernate等常用开源框架。提倡不要重复造轮子，最理想情况是升级改造！</li>
-  <li>开发工具能够支持代码规范的自动检查，报错。</li>
-  <li>有持续集成环境不断验证服务，必须有测试用例验证，并且验证代码是否符合规范，不符合规范报错，另外还要做代码覆盖率，注释检查等。做到错误提前发现</li>
-  <li>功能交付前要有代码review</li>
-  <li>测试以及交付阶段产生的功能需求必须跟踪</li>
-  <li>开发过程中遇到的问题和解决方案要沉淀，文档必须迭代。发挥文档应有的功能价值。</li>
-  <li>开发完成后，产品发布时自动发布成分布式或者集群式。开发不用关心如何部署。</li>
-  <li>架构要支持HA，支持故障迁移，支持动态可伸缩</li>
-  <li>产品交付阶段能够实时了解运行情况，监视实时动态，包含服务健康以及服务负载等指标，最好是图形化展示</li>
-  <li>对于不同的项目一定要有协同看板，让团队知道团队的总体目标，让团队成员明确自己的任务，一个任务要具体人员，以及交付时间，以及交付产物有哪些!并且这些产物都是可以验证和review的。在一个固定的周期内要评审回顾。建议以敏捷的方式操作</li>
-  <li>对于项目或者产品研发一定要明确不同角色的具体的流程，流程一定要管控死，流程可以根据迭代情况不断调整，但是调整前必须严格执行。否则就会有破窗效应，影响后续计划的执行，降低流程的执行效率。对于流程中的问题一定要及时弥补和反应，否则也会引起不好的后果。</li>
-  <li>测试要自动化，部署自动化，运维要自动化，尽量减少人工干预，人可以在所有流程环节中，可以设置为最不可信任节点，有可以机器代替的尽量机器执行，做到高度自动化，高度可靠，高度量化！</li>
-</ul></p>
 					 </div>
 		  </div>
 <div class="pagination clearfix mb1 mt4">

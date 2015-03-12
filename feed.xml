@@ -6,9 +6,176 @@
     <atom:link href="http://www.vouov.com/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>星期日, 8 三月 2015 22:25:23 +0800</pubDate>
-    <lastBuildDate>星期日, 8 三月 2015 22:25:23 +0800</lastBuildDate>
+    <pubDate>星期四, 12 三月 2015 17:34:59 +0800</pubDate>
+    <lastBuildDate>星期四, 12 三月 2015 17:34:59 +0800</lastBuildDate>
 
+    <item>
+      <title>POI根据Excel模板导出大数据</title>
+      <link>http://www.vouov.com/blog/2015-03-12-java-excel-template-export-big-data.html</link>
+      <pubDate>星期四, 12 三月 2015 00:00:00 +0800</pubDate>
+      <guid isPermaLink="false">blog/2015-03-12-java-excel-template-export-big-data.html</guid>
+      	<description>
+	&lt;p&gt;在一些项目中,需要导出数据, 如果编程实现POI样式等比较麻烦,所以一般根据模板来导出数据,之前使用过JXLS来实现,对于小数据比较好用,但是对于数据量比较大就比较慢,甚至死掉,不能导出.&lt;/p&gt;&lt;p&gt;经过一段时间研究POI,发现POI的SXSSF支持大数据导出,经过测试有很好的性能.实现有两种思路:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;通过Excel文件copy样式等, 经过长时间验证和测试,有缺陷,会丢掉一些样式,不能完美达到目标&lt;/li&gt;
+  &lt;li&gt;通过修改模板文件,然后直接输出,经过测试验证,这种能够很好的解决大数据导出问题.&lt;/li&gt;
+&lt;/ul&gt;&lt;p&gt;下面我们给出第二种思路的具体实现,经过测试导出5W条数据大概需要4S,这个测试结果非常快. 如果使用标准POI XSSF来实现,会卡死不会输出.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;java&quot;&gt;/**
+     * 根据Excel模板导出数据,支持大数据导出
+     *
+     * @param templateInputStream
+     * @param data
+     * @param outputStream
+     * @param &amp;lt;T&amp;gt;
+     * @throws IOException
+     * @throws InvalidFormatException
+     */
+public static &amp;lt;T&amp;gt; void generateExcel(InputStream templateInputStream, Iterator&amp;lt;T&amp;gt; data, OutputStream outputStream) throws IOException, InvalidFormatException {
+	// 通过类加载器获取模板
+	XSSFWorkbook workbook = new XSSFWorkbook(templateInputStream);
+	XSSFSheet sheet = workbook.getSheetAt(0);
+	XSSFRow row = sheet.getRow(1);
+
+	List&amp;lt;CellStyle&amp;gt; cellStyles = new ArrayList&amp;lt;CellStyle&amp;gt;();
+	List&amp;lt;String&amp;gt; cellValues = new ArrayList&amp;lt;String&amp;gt;();
+	Map&amp;lt;Integer, String&amp;gt; cellFormatMap = new HashMap&amp;lt;Integer, String&amp;gt;();
+	Pattern pattern = Pattern.compile(&amp;quot;^\\$\\{([\\w\\.]+)\\}$&amp;quot;);
+	for (int i = 0; i &amp;lt; row.getLastCellNum(); i++) {
+		XSSFCell cell = row.getCell(i);
+		cellStyles.add(cell.getCellStyle());
+		String cellValue = cell.getStringCellValue();
+		cellValues.add(cellValue);
+		if (cellValue != null) {
+			Matcher matcher = pattern.matcher(cellValue);
+			if (matcher.find()) {
+				cellFormatMap.put(i, matcher.group(1));
+			}
+		}
+	}
+
+	sheet.removeRow(row);
+	SXSSFWorkbook newWorkbook = new SXSSFWorkbook(workbook); // keep 100 rows in memory, exceeding rows will be flushed to disk
+	Sheet newSheet = newWorkbook.getSheetAt(0);
+	int rowNum = 1;
+	while (data.hasNext()) {
+		T t = data.next();
+		JSONObject item = null;
+		if (t instanceof JSONObject) {
+			item = (JSONObject) t;
+		} else {
+			String json = JSON.toJSONString(t);
+			item = JSON.parseObject(json);
+		}
+
+		Row newRow = newSheet.createRow(rowNum);
+		for (int i = 0; i &amp;lt; cellValues.size(); i++) {
+			Cell newCell = newRow.createCell(i);
+			newCell.setCellStyle(cellStyles.get(i));
+			String newCellValue = cellValues.get(i);
+			if (newCellValue != null &amp;amp;&amp;amp; cellFormatMap.containsKey(i)) {
+				newCellValue = JsonUtils.getJSONValue(item, cellFormatMap.get(i));
+			}
+			newCell.setCellValue(newCellValue);
+		}
+
+		rowNum++;
+	}
+	newWorkbook.write(outputStream);
+}
+&lt;/code&gt;&lt;/pre&gt;
+	</description>
+    </item>
+    <item>
+      <title>Java中HTML转PDF文档实现</title>
+      <link>http://www.vouov.com/blog/2015-03-09-java-html-to-pdf.html</link>
+      <pubDate>星期一, 9 三月 2015 00:00:00 +0800</pubDate>
+      <guid isPermaLink="false">blog/2015-03-09-java-html-to-pdf.html</guid>
+      	<description>
+	&lt;p&gt;之前我们讲述了如果通过html转换成word文档,现在我们讲述如何通过java实现转换HTML为PDF文档.&lt;br/&gt;首先我们把HTML文本通过jsoup整理成xhtml,然后通过flying-saucer-pdf-itext5或者itextpdf xmlworker转换成PDF.&lt;br/&gt;对于flying-saucer和itextpdf xmlworker都可以转换xhtml为PDF,但是在使用中我们发现flying-saucer对于样式的转换更加自然,而itextpdf的转换会丢失部分样式,所以接下来我们会给出两种实现方式,方便根据需要选择其中一种.&lt;/p&gt;&lt;p&gt;itextpdf xmlworker的maven依赖:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;dependency&amp;gt;
+	&amp;lt;groupId&amp;gt;com.itextpdf&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;itextpdf&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;5.5.4&amp;lt;/version&amp;gt;
+&amp;lt;/dependency&amp;gt;
+&amp;lt;dependency&amp;gt;
+	&amp;lt;groupId&amp;gt;com.itextpdf.tool&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;xmlworker&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;5.5.4&amp;lt;/version&amp;gt;
+&amp;lt;/dependency&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;flying-saucer的maven依赖:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;dependency&amp;gt;
+	&amp;lt;groupId&amp;gt;org.xhtmlrenderer&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;flying-saucer-pdf-itext5&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;9.0.7&amp;lt;/version&amp;gt;
+&amp;lt;/dependency&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;html转成xhtml的jsoup参考实现如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;java&quot;&gt;/**
+ * 清理HTML内容,转换成标准xhtml
+ * @param html
+ * @return
+ */
+public static String tidyHtml(String html){
+	Document doc = Jsoup.parse(html);
+	// Clean the document.
+	//doc = new Cleaner(Whitelist.basicWithImages()).clean(doc);
+	doc.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
+	doc.outputSettings().prettyPrint(true);
+
+	doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+	// Get back the string of the body.
+	return doc.html();
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;html转换成PDF的itextpdf xmlworker代码参考实现如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;java&quot;&gt;/**
+ * 使用IText默认实现
+ *
+ * @param html
+ * @param baseURL
+ * @param os
+ * @throws DocumentException
+ * @throws IOException
+ */
+public static void html2Pdf(String html, String baseURL, OutputStream os) throws DocumentException, IOException {
+	String xhtml = HtmlUtils.tidyHtml(html);
+	xhtml = HtmlUtils.fillImageURL(xhtml, baseURL, null);
+	// step 1
+	Document document = new Document();
+	// step 2
+	PdfWriter writer = PdfWriter.getInstance(document, os);
+	// step 3
+	document.open();
+	// step 4
+	XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(xhtml.getBytes(&amp;quot;UTF-8&amp;quot;)), Charset.forName(&amp;quot;UTF-8&amp;quot;));
+	//step 5
+	document.close();
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;html转换成PDF的flying-saucer代码参考实现如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;java&quot;&gt;/**
+ * 使用flying-saucer-pdf-itext5实现
+ *
+ * @param html
+ * @param baseURL
+ * @param os
+ * @throws IOException
+ * @throws DocumentException
+ */
+public static void html2Pdf(String html, String baseURL, OutputStream os) throws IOException, DocumentException {
+	ITextRenderer renderer = new ITextRenderer();
+	String xhtml = HtmlUtils.tidyHtml(html);
+
+	renderer.setDocumentFromString(xhtml, baseURL);
+
+	// 解决中文支持问题
+	ITextFontResolver fontResolver = renderer.getFontResolver();
+	fontResolver.addFont(&amp;quot;C:/Windows/Fonts/SIMSUN.TTC&amp;quot;, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
+	//解决图片的相对路径问题
+	renderer.getSharedContext().setBaseURL(baseURL);
+	renderer.layout();
+	renderer.createPDF(os);
+}
+&lt;/code&gt;&lt;/pre&gt;
+	</description>
+    </item>
     <item>
       <title>Java中HTML转Word文档实现</title>
       <link>http://www.vouov.com/blog/2015-03-08-java-html-to-word.html</link>
