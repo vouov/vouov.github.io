@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>POI根据Excel模板导出大数据</title>
+	<title>Dubbo使用总结</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="">
 	<meta name="author" content="">
@@ -42,8 +42,8 @@
     <div class="post p2 p-responsive wrap" role="main">
       <div class="measure">
 		<div class="post-header mb2">
-		  <h1 class="py2">POI根据Excel模板导出大数据</h1>
-		  <span class="post-meta">2015年03月12日</span>
+		  <h1 class="py2">Dubbo使用总结</h1>
+		  <span class="post-meta">2015年03月15日</span>
 		  
 		  <span class="bdsharebuttonbox" style="float:right;"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a><a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a href="#" class="bds_douban" data-cmd="douban" title="分享到豆瓣网"></a><a href="#" class="bds_youdao" data-cmd="youdao" title="分享到有道云笔记"></a><a href="#" class="bds_fbook" data-cmd="fbook" title="分享到Facebook"></a><a href="#" class="bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a><a href="#" class="bds_twi" data-cmd="twi" title="分享到Twitter"></a><a href="#" class="bds_print" data-cmd="print" title="分享到打印"></a></span>
 <script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":["mshare","weixin","tsina","douban","youdao","bdhome","thx","ibaidu","taobao","hi","meilishuo","mogujie","fbook","twi","print","copy","linkedin","diandian","huaban","duitang","hx","fx","sdo","qingbiji","people","xinhua","mail","kanshou","isohu","yaolan","wealink","ty","iguba"],"bdPic":"","bdStyle":"1","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
@@ -52,75 +52,21 @@
 		</div>
 
 		<article class="post-content">
-		  <p>在一些项目中,需要导出数据, 如果编程实现POI样式等比较麻烦,所以一般根据模板来导出数据,之前使用过JXLS来实现,对于小数据比较好用,但是对于数据量比较大就比较慢,甚至死掉,不能导出.</p><p>经过一段时间研究POI,发现POI的SXSSF支持大数据导出,经过测试有很好的性能.实现有两种思路:</p>
+		  <p><a href="http://alibaba.github.io/dubbo-doc-static/Home-zh.htm">Dubbo</a> 是一个分布式服务框架，致力于提供高性能和透明化的RPC远程服务调用方案，以及SOA服务治理方案。</p><p>其核心部分包含:</p>
 <ul>
-  <li>通过Excel文件copy样式等, 经过长时间验证和测试,有缺陷,会丢掉一些样式,不能完美达到目标</li>
-  <li>通过修改模板文件,然后直接输出,经过测试验证,这种能够很好的解决大数据导出问题.</li>
-</ul><p>下面我们给出第二种思路的具体实现,经过测试导出5W条数据大概需要4S,这个测试结果非常快. 如果使用标准POI XSSF来实现,会卡死不会输出.</p>
-<pre><code class="java">/**
-     * 根据Excel模板导出数据,支持大数据导出
-     *
-     * @param templateInputStream
-     * @param data
-     * @param outputStream
-     * @param &lt;T&gt;
-     * @throws IOException
-     * @throws InvalidFormatException
-     */
-public static &lt;T&gt; void generateExcel(InputStream templateInputStream, 
-Iterator&lt;T&gt; data, OutputStream outputStream) throws IOException, InvalidFormatException {
-	// 通过类加载器获取模板
-	XSSFWorkbook workbook = new XSSFWorkbook(templateInputStream);
-	XSSFSheet sheet = workbook.getSheetAt(0);
-	XSSFRow row = sheet.getRow(1);
-
-	List&lt;CellStyle&gt; cellStyles = new ArrayList&lt;CellStyle&gt;();
-	List&lt;String&gt; cellValues = new ArrayList&lt;String&gt;();
-	Map&lt;Integer, String&gt; cellFormatMap = new HashMap&lt;Integer, String&gt;();
-	Pattern pattern = Pattern.compile(&quot;^\\$\\{([\\w\\.]+)\\}$&quot;);
-	for (int i = 0; i &lt; row.getLastCellNum(); i++) {
-		XSSFCell cell = row.getCell(i);
-		cellStyles.add(cell.getCellStyle());
-		String cellValue = cell.getStringCellValue();
-		cellValues.add(cellValue);
-		if (cellValue != null) {
-			Matcher matcher = pattern.matcher(cellValue);
-			if (matcher.find()) {
-				cellFormatMap.put(i, matcher.group(1));
-			}
-		}
-	}
-
-	sheet.removeRow(row);
-	SXSSFWorkbook newWorkbook = new SXSSFWorkbook(workbook);
-	Sheet newSheet = newWorkbook.getSheetAt(0);
-	int rowNum = 1;
-	while (data.hasNext()) {
-		T t = data.next();
-		JSONObject item = null;
-		if (t instanceof JSONObject) {
-			item = (JSONObject) t;
-		} else {
-			String json = JSON.toJSONString(t);
-			item = JSON.parseObject(json);
-		}
-
-		Row newRow = newSheet.createRow(rowNum);
-		for (int i = 0; i &lt; cellValues.size(); i++) {
-			Cell newCell = newRow.createCell(i);
-			newCell.setCellStyle(cellStyles.get(i));
-			String newCellValue = cellValues.get(i);
-			if (newCellValue != null &amp;&amp; cellFormatMap.containsKey(i)) {
-				newCellValue = JsonUtils.getJSONValue(item, cellFormatMap.get(i));
-			}
-			newCell.setCellValue(newCellValue);
-		}
-
-		rowNum++;
-	}
-	newWorkbook.write(outputStream);
-}
-</code></pre>
+  <li>远程通讯: 提供对多种基于长连接的NIO框架抽象封装，包括多种线程模型，序列化，以及“请求-响应”模式的信息交换方式。</li>
+  <li>集群容错: 提供基于接口方法的透明远程过程调用，包括多协议支持，以及软负载均衡，失败容错，地址路由，动态配置等集群支持。</li>
+  <li>自动发现: 基于注册中心目录服务，使服务消费方能动态的查找服务提供方，使地址透明，使服务提供方可以平滑增加或减少机器。</li>
+</ul><p>Dubbo能做什么？</p>
+<ul>
+  <li>透明化的远程方法调用，就像调用本地方法一样调用远程方法，只需简单配置，没有任何API侵入。</li>
+  <li>软负载均衡及容错机制，可在内网替代F5等硬件负载均衡器，降低成本，减少单点。</li>
+  <li>服务自动注册与发现，不再需要写死服务提供方地址，注册中心基于接口名查询服务提供者的IP地址，并且能够平滑添加或删除服务提供者。</li>
+</ul><p>上面是官方对于Dubbo一些描述, 对于稳定性是经过阿里巴巴验证过的,所以稳定是能够得到保证的.<br/>对于不同公司和不同的团队,有着各种需求和情况,那么我们就要探索如何使用Dubbo,使Dubbo能够很好的和我们的目标一致.</p><p>应该怎么使用dubbo?</p>
+<ul>
+  <li>从零开始<br/> 从头开始使用dubbo是比较简单的,我们可以完全按照dubbo官方指导实现. 具体项目示例请参照<a href="https://github.com/alibaba/dubbo/tree/master/dubbo-demo">https://github.com/alibaba/dubbo/tree/master/dubbo-demo</a></li>
+  <li>已有项目改造<br/> 如果我们是spring的项目,那么我们可以平滑的过度到dubbo, 具体的实现思路是我们在编译阶段提取我们spring的service,生成consumer和provider文件配置,然后通过启动dubbo来加载我们的服务</li>
+</ul><p>接下来我们重点讲述如何对于现有spring项目改造成dubbo<br/> 首先如果我们使用dubbo远程服务调用,那么我们如何保证事务? 如果要保证事务,我们需要把所要运新的服务在一台机器执行, 即官方所谓Best Efforts 1PC模式.那我们就要保证暴露的服务尽量是一个事务.<br/> 改造的思路是通过约定开发,达到开发和部署分离.开发采用传统的开发方式,在服务器发布时自动提取service,具体实现通过使用java的APT来实现.具体实现已经实现,后面有时间把具体的实现放到github上.</p><p>dubbo如何启动?<br/> java com.alibaba.dubbo.container.Main</p><p>dubbo如何停止?<br/> 优雅停机,Dubbo是通过JDK的ShutdownHook来完成优雅停机的，所以如果用户使用"kill -9 PID"等强制关闭指令，是不会执行优雅停机的，只有通过"kill PID"时，才会执行。</p>
 		</article>
 		
 		
