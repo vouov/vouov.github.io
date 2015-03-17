@@ -43,6 +43,440 @@
 		<div class="home">
 		  <div class="posts">
 					<div class="post">
+						<a href="blog/2015-03-06-java-RSA.html" class="post-link">
+						  <h3 class="h2 post-title">Java中RSA加密兼容Android实现</h3>
+						  <p class="post-meta">2015年03月06日</p>
+						</a>
+						<p class="post-summary"><p>RSA加密主要有以下几个操作：</p>
+<ul>
+  <li><p><strong>RSA密钥生成</strong></p><p>密钥的生成有java程序生成,Linux命令生成,java keytool生成</p></li>
+  <li><p><strong>RSA密钥存储</strong></p><p>密钥主要存储在java主机上,通过keytool导入或者生成</p></li>
+  <li><p><strong>RSA根据公钥加密</strong></p><p>根据对方的公钥对明文加密生成密文,发送给对方</p></li>
+  <li><p><strong>RSA根据密钥签名</strong></p><p>用自有的私钥对要明文签名,生成摘要签名,把明文和签名信息发送给你对方</p></li>
+  <li><p><strong>RSA根据公钥验证签名</strong></p><p>对方接收到明文和签名,通过自有公钥发送给对方,对象通过发送过来的公钥进行验证.</p></li>
+  <li><p><strong>RSA根据密钥解密</strong></p><p>对方接收到密文,通过对方的私钥解密接收到的密文</p></li>
+</ul><p>数字签名（通常的数字签名）的基础是公钥密码体系（例如：RSA）。发送者有独一无二的公钥和私钥，公钥是公开的，私钥秘密保留。发送者利用私钥对数据的消息摘要进行数字签名，接收者利用发送者的公钥来验证数字签名，其实就是把加密过程颠倒过来使用。由于发送者的私钥是独一无二的，而且是秘密的，因此当能够验证解开数字签名的数字摘要是正确的后，那么我们就可以肯定发送者的身份了，这就是数字签名的基本原理。</p><p>在java中通常使用默认的方式和android的RSA是不能通用的,android默认使用的Provider是BouncyCastleProvider, 所以要把Java中的Provider也切换到BouncyCastleProvider.这样他们才能相互认识.<br/>BouncyCastle的Maven依赖:</p>
+<pre><code>&lt;dependency&gt;
+	&lt;groupId&gt;org.bouncycastle&lt;/groupId&gt;
+	&lt;artifactId&gt;bcprov-jdk15on&lt;/artifactId&gt;
+	&lt;version&gt;1.51&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre><p>具体的实现请参照以下代码:</p>
+<pre><code class="java">/**
+ * RSA公钥/私钥/签名工具包
+ * &lt;p/&gt;
+ * 字符串格式的密钥在未在特殊说明情况下都为BASE64编码格式&lt;br/&gt;
+ * 由于非对称加密速度极其缓慢，一般文件不使用它来加密而是使用对称加密，&lt;br/&gt;
+ * 非对称加密算法可以用来对对称加密的密钥加密，这样保证密钥的安全也就保证了数据的安全
+ *
+ * @author yuml
+ * @date 2015/3/4
+ */
+public class RSAUtils {
+
+
+    static {
+        //添加RSA第三方provider，主要解决android的兼容问题，提供统一的Provider
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
+
+    /**
+     * 加密算法RSA
+     */
+    public static final String KEY_ALGORITHM_NAME = &quot;RSA&quot;;
+
+    public static final String KEY_ALGORITHM_MODE = &quot;RSA/ECB/PKCS1Padding&quot;;
+
+
+    /**
+     * BouncyCastleProvider的名字
+     */
+    public static final String PROVIDER_NAME = &quot;BC&quot;;
+
+    /**
+     * 签名算法
+     */
+    public static final String SIGNATURE_ALGORITHM_NAME = &quot;MD5withRSA&quot;;
+
+    /**
+     * RSA最大加密明文大小
+     */
+    private static final int MAX_ENCRYPT_BLOCK = 117;
+
+    /**
+     * RSA最大解密密文大小
+     */
+    private static final int MAX_DECRYPT_BLOCK = 128;
+
+    /**
+     * &lt;p&gt;
+     * 生成密钥对(公钥和私钥)
+     * &lt;/p&gt;
+     *
+     * @return
+     * @throws Exception
+     */
+    public static KeyPair generateKeyPair() throws Exception {
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance(KEY_ALGORITHM_NAME, PROVIDER_NAME);
+        keyPairGen.initialize(1024);
+        KeyPair keyPair = keyPairGen.generateKeyPair();
+        keyPair.getPublic();
+        keyPair.getPrivate();
+        return keyPair;
+    }
+
+
+    /**
+     * 用私钥对信息生成数字签名
+     *
+     * @param data       已加密数据
+     * @param privateKey 私钥
+     * @return
+     * @throws Exception
+     */
+    public static String sign(byte[] data, PrivateKey privateKey) throws Exception {
+        Signature signature = Signature.getInstance(SIGNATURE_ALGORITHM_NAME, PROVIDER_NAME);
+        signature.initSign(privateKey);
+        signature.update(data);
+        return Base64.encode(signature.sign());
+    }
+
+    /**
+     * 校验数字签名
+     *
+     * @param data      已加密数据
+     * @param publicKey 公钥
+     * @param sign      数字签名
+     * @return
+     * @throws Exception
+     */
+    public static boolean verify(byte[] data, PublicKey publicKey, String sign)
+            throws Exception {
+        Signature signature = Signature.getInstance(SIGNATURE_ALGORITHM_NAME, PROVIDER_NAME);
+        signature.initVerify(publicKey);
+        signature.update(data);
+        return signature.verify(Base64.decode(sign));
+    }
+
+    /**
+     * 私钥解密
+     *
+     * @param encryptedData 已加密数据
+     * @param privateKey    私钥
+     * @return
+     * @throws Exception
+     */
+    public static byte[] decryptByPrivateKey(byte[] encryptedData, PrivateKey privateKey)
+            throws Exception {
+
+        Cipher cipher = Cipher.getInstance(KEY_ALGORITHM_MODE, PROVIDER_NAME);
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+
+        int inputLen = encryptedData.length;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int offSet = 0;
+        byte[] cache;
+        int i = 0;
+        // 对数据分段解密
+        while (inputLen - offSet &gt; 0) {
+            if (inputLen - offSet &gt; MAX_DECRYPT_BLOCK) {
+                cache = cipher.doFinal(encryptedData, offSet, MAX_DECRYPT_BLOCK);
+            } else {
+                cache = cipher.doFinal(encryptedData, offSet, inputLen - offSet);
+            }
+            out.write(cache, 0, cache.length);
+            i++;
+            offSet = i * MAX_DECRYPT_BLOCK;
+        }
+        byte[] decryptedData = out.toByteArray();
+        out.close();
+        return decryptedData;
+    }
+
+    /**
+     * 公钥解密
+     *
+     * @param encryptedData 已加密数据
+     * @param publicKey     公钥
+     * @return
+     * @throws Exception
+     */
+    public static byte[] decryptByPublicKey(byte[] encryptedData, PublicKey publicKey)
+            throws Exception {
+
+        Cipher cipher = Cipher.getInstance(KEY_ALGORITHM_MODE, PROVIDER_NAME);
+        cipher.init(Cipher.DECRYPT_MODE, publicKey);
+
+        int inputLen = encryptedData.length;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int offSet = 0;
+        byte[] cache;
+        int i = 0;
+        // 对数据分段解密
+        while (inputLen - offSet &gt; 0) {
+            if (inputLen - offSet &gt; MAX_DECRYPT_BLOCK) {
+                cache = cipher.doFinal(encryptedData, offSet, MAX_DECRYPT_BLOCK);
+            } else {
+                cache = cipher.doFinal(encryptedData, offSet, inputLen - offSet);
+            }
+            out.write(cache, 0, cache.length);
+            i++;
+            offSet = i * MAX_DECRYPT_BLOCK;
+        }
+        byte[] decryptedData = out.toByteArray();
+        out.close();
+        return decryptedData;
+    }
+
+    /**
+     * 公钥加密
+     *
+     * @param data      源数据
+     * @param publicKey 公钥
+     * @return
+     * @throws Exception
+     */
+    public static byte[] encryptByPublicKey(byte[] data, PublicKey publicKey)
+            throws Exception {
+        // 对数据加密
+        Cipher cipher = Cipher.getInstance(KEY_ALGORITHM_MODE, PROVIDER_NAME);
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+
+
+        int inputLen = data.length;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int offSet = 0;
+        byte[] cache;
+        int i = 0;
+        // 对数据分段加密
+        while (inputLen - offSet &gt; 0) {
+            if (inputLen - offSet &gt; MAX_ENCRYPT_BLOCK) {
+                cache = cipher.doFinal(data, offSet, MAX_ENCRYPT_BLOCK);
+            } else {
+                cache = cipher.doFinal(data, offSet, inputLen - offSet);
+            }
+            out.write(cache, 0, cache.length);
+            i++;
+            offSet = i * MAX_ENCRYPT_BLOCK;
+        }
+        byte[] encryptedData = out.toByteArray();
+        out.close();
+        return encryptedData;
+    }
+
+    /**
+     * 私钥加密
+     *
+     * @param data       源数据
+     * @param privateKey 私钥
+     * @return
+     * @throws Exception
+     */
+    public static byte[] encryptByPrivateKey(byte[] data, PrivateKey privateKey)
+            throws Exception {
+
+        Cipher cipher = Cipher.getInstance(KEY_ALGORITHM_MODE, PROVIDER_NAME);
+        cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+
+        int inputLen = data.length;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int offSet = 0;
+        byte[] cache;
+        int i = 0;
+        // 对数据分段加密
+        while (inputLen - offSet &gt; 0) {
+            if (inputLen - offSet &gt; MAX_ENCRYPT_BLOCK) {
+                cache = cipher.doFinal(data, offSet, MAX_ENCRYPT_BLOCK);
+            } else {
+                cache = cipher.doFinal(data, offSet, inputLen - offSet);
+            }
+            out.write(cache, 0, cache.length);
+            i++;
+            offSet = i * MAX_ENCRYPT_BLOCK;
+        }
+        byte[] encryptedData = out.toByteArray();
+        out.close();
+        return encryptedData;
+    }
+
+
+    /**
+     * 从文件中输入流中加载公钥
+     *
+     * @param in 公钥输入流
+     * @throws Exception 加载公钥时产生的异常
+     */
+    public PublicKey loadPublicKey(InputStream in) throws Exception {
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        String readLine = null;
+        StringBuilder sb = new StringBuilder();
+        while ((readLine = br.readLine()) != null) {
+            if (readLine.charAt(0) == &#39;-&#39;) {
+                continue;
+            } else {
+                sb.append(readLine);
+                sb.append(&#39;\r&#39;);
+            }
+        }
+        return loadPublicKey(sb.toString());
+
+    }
+
+    /**
+     * 从文件中加载私钥
+     *
+     * @param in 私钥文件名
+     * @return 是否成功
+     * @throws Exception
+     */
+    public PrivateKey loadPrivateKey(InputStream in) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        String readLine = null;
+        StringBuilder sb = new StringBuilder();
+        while ((readLine = br.readLine()) != null) {
+            if (readLine.charAt(0) == &#39;-&#39;) {
+                continue;
+            } else {
+                sb.append(readLine);
+                sb.append(&#39;\r&#39;);
+            }
+        }
+        return loadPrivateKey(sb.toString());
+    }
+
+    /**
+     * 从字符串中加载私钥
+     *
+     * @param privateKey
+     * @return
+     * @throws Exception
+     */
+    public static PrivateKey loadPrivateKey(String privateKey) throws Exception {
+        byte[] keyBytes = Base64.decode(privateKey);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM_NAME, PROVIDER_NAME);
+        return keyFactory.generatePrivate(keySpec);
+    }
+
+    /**
+     * 从字符串中加载公钥
+     *
+     * @param publicKey
+     * @return
+     * @throws Exception
+     */
+    public static PublicKey loadPublicKey(String publicKey) throws Exception {
+        byte[] keyBytes = Base64.decode(publicKey);
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM_NAME, PROVIDER_NAME);
+        return keyFactory.generatePublic(keySpec);
+    }
+
+    /**
+     * 从keystore中读取私钥
+     *
+     * @param alias
+     * @param path     包含私钥的证书路径
+     * @param password
+     * @return 私钥PrivateKey
+     * @throws Exception
+     */
+    public static PrivateKey loadKeyStorePrivateKey(String alias, String path, String password) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        char[] passwordChars = null;
+        if ((password != null) || &quot;&quot;.equals(password.trim())) {
+            passwordChars = password.toCharArray();
+        }
+
+        KeyStore keyStore = KeyStore.getInstance(&quot;PKCS12&quot;);
+        keyStore.load(fis, passwordChars);
+        fis.close();
+        String keyAlias = alias;
+        if (alias == null) {
+            Enumeration&lt;String&gt; en = keyStore.aliases();
+            if (en.hasMoreElements()) {
+                keyAlias = en.nextElement();
+            }
+        }
+        return (PrivateKey) keyStore.getKey(keyAlias, passwordChars);
+    }
+
+    /**
+     * 从keystore中读取私钥
+     *
+     * @param path     包含私钥的证书路径
+     * @param password
+     * @return 私钥PrivateKey
+     * @throws Exception
+     */
+    public static PrivateKey loadKeyStorePrivateKey(String path, String password) throws Exception {
+        return loadKeyStorePrivateKey(null, path, password);
+    }
+
+    /**
+     * 从keystore中读取公钥
+     *
+     * @param alias
+     * @param path     包含公钥的证书路径
+     * @param password
+     * @return
+     * @throws Exception
+     */
+    public static PublicKey loadKeyStorePublicKey(String alias, String path, String password) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        char[] passwordChars = null;
+        if ((password != null) || &quot;&quot;.equals(password.trim())) {
+            passwordChars = password.toCharArray();
+        }
+
+        KeyStore keyStore = KeyStore.getInstance(&quot;PKCS12&quot;);
+        keyStore.load(fis, passwordChars);
+        fis.close();
+        String keyAlias = alias;
+        if (alias == null) {
+            Enumeration&lt;String&gt; en = keyStore.aliases();
+            if (en.hasMoreElements()) {
+                keyAlias = en.nextElement();
+            }
+        }
+        return keyStore.getCertificate(keyAlias).getPublicKey();
+    }
+
+    /**
+     * 从keystore中读取公钥
+     *
+     * @param path     包含公钥的证书路径
+     * @param password
+     * @return
+     * @throws Exception
+     */
+    public static PublicKey loadKeyStorePublicKey(String path, String password) throws Exception {
+        return loadKeyStorePublicKey(null, path, password);
+    }
+
+    /**
+     * 根据公钥n、e生成公钥
+     *
+     * @param modulus        公钥n串
+     * @param publicExponent 公钥e串
+     * @return 返回公钥PublicKey
+     * @throws Exception
+     */
+    public static PublicKey loadPublicKey(String modulus, String publicExponent) throws Exception {
+        KeySpec publicKeySpec = new RSAPublicKeySpec(
+                new BigInteger(modulus, 16), new BigInteger(publicExponent, 16));
+        KeyFactory factory = KeyFactory.getInstance(KEY_ALGORITHM_NAME, PROVIDER_NAME);
+        PublicKey publicKey = factory.generatePublic(publicKeySpec);
+        return publicKey;
+    }
+
+}
+
+</code></pre></p>
+					 </div>
+					<div class="post">
 						<a href="blog/2015-03-04-java-AES-compatible.html" class="post-link">
 						  <h3 class="h2 post-title">Java中AES加密兼容PHP等其他语言实现</h3>
 						  <p class="post-meta">2015年03月04日</p>
@@ -227,26 +661,6 @@ echo($decrypted);
 						  <p class="post-meta">2015年03月01日</p>
 						</a>
 						<p class="post-summary"><p>今天放假，乘着小孩睡觉的时间看了“柴静雾霾调查:穹顶之下 同呼吸共命运”。感触很深，问题发生了，怎么解决才是重中之重。</p><p>希望我家旁边的河流流淌的不再是黑水、臭水，而是中间游着鱼儿，可以垂钓的净水。希望政府可以多做点事情，让家园更加美好，让世界更加美好！愿你我生活的世界都是美好的。</p><h1>发现污染记得拨打12369.这个也许是我们举手之劳。</h1><p><iframe height=498 width=510 src="http://player.youku.com/embed/XOTAxMzQ1NzY0" frameborder=0 allowfullscreen></iframe></p></p>
-					 </div>
-					<div class="post">
-						<a href="blog/2015-03-01-how-to-create-github-blog.html" class="post-link">
-						  <h3 class="h2 post-title">怎样建立自己的Github博客</h3>
-						  <p class="post-meta">2015年03月01日</p>
-						</a>
-						<p class="post-summary"><p>去年发生太多的事情，一直无时间打理博客，之前wordpress也荒废了。今年下决定好好的维护一个博客，记录一下自己的生活和学习。</p><p>在学习如何搭建一个github博客之前，首先我们需要了解github的博客本质是什么，我们都知道github的页面都是通过markdown语法编写的。其实github也支持普通的静态html页面显示，就类似于给你一个免费的HTML空间，你自己上传HTML页面和资源文件，这样就是一个网站，这个和我们普通理解的CMS或者Blog系统不太一样。现在Github推荐的jekyll本质就是提供一套主题给你，然后你自己运行本地的生成静态的脚本把.md结尾的文件按照模板生成静态HTML然后再发布到github的仓库中，github然后就可以对外展示你最新的东西了。所以我们的目的只有一个就是如何搭建一个静态HTML站点.</p><p>如何搭建一个github博客就变成如何搭建一个静态的HTML站点，那我们就不一定需要jekyll去做这件事，同样我们也可以使用纯静态HTML的空间或者PHP空间来作为我们的服务器空间。我们比较熟悉java变成，希望用自己熟悉和擅长东西来做这件事情，经过查找研究选择了<a href="http://jbake.org/">jbake</a>来做这件事。</p>
-<ul>
-  <li>在操作之前我们首先要有github的账号，具体如何申请一个博客空间请参照：<a href="https://help.github.com/articles/creating-pages-with-the-automatic-generator/">Creating Pages with the automatic generator</a>，</li>
-  <li>有了空间如何绑定域名请参照：<a href="https://help.github.com/articles/setting-up-a-custom-domain-with-github-pages/">Setting up a custom domain with GitHub Pages</a></li>
-</ul><p>这样我们就有个一个github博客空间，并且可以通过域名访问了，下面就开始如何开始使用jbake搭建我们的博客系统，jbake使用freemarker模板引擎实现。具体的jbake如何运行和使用请参照：<a href="http://jbake.org/docs/2.3.2/">jbake使用手册</a>。因为jbake不支持首页分页，我对官方源码修改了下支持首页分页，如果需要请参见我的github：https://github.com/vouov/jbake，打好的支持分页的jar包可以直接下载替换，请下载：<a href="/uploads/software/jbake-core.jar">jbake-core.jar</a>,具体使用分页请参照我的blog源码：<a href="https://github.com/vouov/blog">github blog</a></p><p>使用jbake作为github的具体步骤如下（前提是我认为你已经申请号github博客空间，并且可以域名访问了）:</p>
-<ul>
-  <li>在你电脑创建一个blog目录，运行命令 jbake -i, 这样就会生成一个example博客模板，有JS、CSS、Images、freemarker模板等资源文件。</li>
-  <li>运行命令 jbake . &lt;目的路径&gt;, 把当前的blog内容生成静态HTML到'目的路径'，便于发布展示。</li>
-  <li>运行命令 jbake -s &lt;目的路径&gt;， 打开浏览器，输入URL地址：http://localhost:8820/,就可以看到示例博客的内容了。这个是一个bootstrap主题博客样式.</li>
-  <li>如果不喜欢官方的主题，自己可以开发。我修改后的主题可以参照我的blog源码：<a href="https://github.com/vouov/blog">github blog</a></li>
-  <li>接下来就是在blog目录中content\blog目录下写自己的.md文件，具体请参照markdown语法</li>
-  <li>写好文章就是编译成HTML，运行命令 jbake . &lt;目的路径&gt;,刷新一下浏览器的地址就可以看到你的文章了</li>
-  <li>提交同步自己的github仓库中，就可以通过域名访问最新的内容了</li>
-</ul><p>用到的软件列表如下：<br/><a href="http://jbake.org">Jbake</a><br/><a href="https://highlightjs.org/">highlightjs</a><br/><a href="http://open.weibo.com/widget/comments.php">新浪微博留言箱</a><br/><a href="http://share.baidu.com/">百度分享</a></p><p>如果使用中有什么问题可以留言给我，或者通过最底部的多种联系方式联系我！<br/>具体可以参照我的github blog源码：<br/><a href="https://github.com/vouov/blog">blog jbake源码</a><br/><a href="https://github.com/vouov/vouov.github.io">编译后的blog HTML</a></p></p>
 					 </div>
 		  </div>
 <div class="pagination clearfix mb1 mt4">

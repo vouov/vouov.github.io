@@ -6,9 +6,59 @@
     <atom:link href="http://www.vouov.com/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>星期日, 15 三月 2015 11:07:30 +0800</pubDate>
-    <lastBuildDate>星期日, 15 三月 2015 11:07:30 +0800</lastBuildDate>
+    <pubDate>星期二, 17 三月 2015 10:29:06 +0800</pubDate>
+    <lastBuildDate>星期二, 17 三月 2015 10:29:06 +0800</lastBuildDate>
 
+    <item>
+      <title>Maven中使用APT</title>
+      <link>http://www.vouov.com/blog/2015-03-17-maven-apt.html</link>
+      <pubDate>星期二, 17 三月 2015 00:00:00 +0800</pubDate>
+      <guid isPermaLink="false">blog/2015-03-17-maven-apt.html</guid>
+      	<description>
+	&lt;p&gt;APT(Annotation Processing Tool)是一个java注解处理工具,主要运行在JDK编译阶段,我们可以简单理解为预编译的处理工具类, 就是我们在执行我们传统的编译前,做一些预处理,可以是资源文件的,也可以是JAVA类的,把一部分注解在编译时解释为传统的类,以提高运行时效率,在运行时,这些注解就不要再执行,即使我们使用字节码优化也不能达到这种类似于原生代码的效率.&lt;/p&gt;&lt;p&gt;如果使用APT,建议使用JDK的最小版本为1.6. APT从在JDK 1.5开始支持,但是从1.6版本开始才稳定和可用性有所提高,简化开发部署的难度.&lt;br/&gt;以下所有的阐述都是针对1.6版本以后.&lt;/p&gt;&lt;p&gt;JDK 1.6版本后添加了几个javac参数:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;shell&quot;&gt;  -proc:{none,only}          Control whether annotation processing and/or compilation is done.
+  -processor &amp;lt;class1&amp;gt;[,&amp;lt;class2&amp;gt;,&amp;lt;class3&amp;gt;...]
+							 Names of the annotation processors to run; 
+							 bypasses default discovery process
+  -processorpath &amp;lt;path&amp;gt;      Specify where to find annotation processors
+  -s &amp;lt;directory&amp;gt;             Specify where to place generated source files
+  -implicit:{none,class}     Specify whether or not to generate class files 
+							 for implicitly referenced files
+  -Akey[=value]              Options to pass to annotation processors
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;那么我们在maven工程中只要添加javac参数就可以了.如下示例:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;plugin&amp;gt;
+	&amp;lt;groupId&amp;gt;org.apache.maven.plugins&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;maven-compiler-plugin&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;2.3.2&amp;lt;/version&amp;gt;
+	&amp;lt;configuration&amp;gt;
+		&amp;lt;proc&amp;gt;only&amp;lt;/proc&amp;gt;
+		&amp;lt;annotationProcessors&amp;gt;
+			&amp;lt;annotationProcessor&amp;gt;com.annotation.processor.AnnotationProcessor&amp;lt;/annotationProcessor&amp;gt;
+		&amp;lt;/annotationProcessors&amp;gt;
+		&amp;lt;source&amp;gt;1.6&amp;lt;/source&amp;gt;
+		&amp;lt;target&amp;gt;1.6&amp;lt;/target&amp;gt;
+	&amp;lt;/configuration&amp;gt;
+&amp;lt;/plugin&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;除了以上方法,也有一些插件来处理,如&lt;a href=&quot;https://github.com/querydsl/apt-maven-plugin&quot;&gt;apt-maven-plugin&lt;/a&gt;,不过主要是针对eclipse的m2e插件的,具体代码如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;plugin&amp;gt;
+    &amp;lt;groupId&amp;gt;com.mysema.maven&amp;lt;/groupId&amp;gt;
+    &amp;lt;artifactId&amp;gt;apt-maven-plugin&amp;lt;/artifactId&amp;gt;
+    &amp;lt;version&amp;gt;1.1.3&amp;lt;/version&amp;gt;
+    &amp;lt;executions&amp;gt;
+        &amp;lt;execution&amp;gt;
+            &amp;lt;goals&amp;gt;
+                &amp;lt;goal&amp;gt;process&amp;lt;/goal&amp;gt;
+            &amp;lt;/goals&amp;gt;
+            &amp;lt;configuration&amp;gt;
+                &amp;lt;outputDirectory&amp;gt;target/generated-sources/java&amp;lt;/outputDirectory&amp;gt;
+                &amp;lt;processor&amp;gt;com.mysema.query.apt.jpa.JPAAnnotationProcessor&amp;lt;/processor&amp;gt;
+            &amp;lt;/configuration&amp;gt;
+        &amp;lt;/execution&amp;gt;
+    &amp;lt;/executions&amp;gt;
+&amp;lt;/plugin&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+	</description>
+    </item>
     <item>
       <title>Dubbo使用总结</title>
       <link>http://www.vouov.com/blog/2015-03-15-dubbo.html</link>
