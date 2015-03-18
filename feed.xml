@@ -6,8 +6,8 @@
     <atom:link href="http://www.vouov.com/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>星期二, 17 三月 2015 10:29:06 +0800</pubDate>
-    <lastBuildDate>星期二, 17 三月 2015 10:29:06 +0800</lastBuildDate>
+    <pubDate>星期三, 18 三月 2015 17:21:08 +0800</pubDate>
+    <lastBuildDate>星期三, 18 三月 2015 17:21:08 +0800</lastBuildDate>
 
     <item>
       <title>Maven中使用APT</title>
@@ -906,6 +906,99 @@ echo($decrypted);
   &lt;pre&gt;&lt;code&gt;mvn -U clean package
 &lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
   &lt;li&gt;&lt;p&gt;&lt;strong&gt;maven项目模块循环依赖如何解决？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;对于项目因为配置了循环依赖的maven工程，可以通过设定不同的artifactId来达到断掉依赖，从而保证项目能正确编译打包，就涉及到手动上传打好的jar包，并且修改artifactId上传到nexus仓库,手动上传参见第2点。&lt;/p&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;如何同时运行package命令同时打jar和war包？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;我们打包的packing设置为war,并且在build阶段添加maven-jar-plugin打包插件,并且可以设置包含或者排除哪些文件, 增加如下pom.xml代码:&lt;/p&gt;
+  &lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;plugin&amp;gt;
+	&amp;lt;groupId&amp;gt;org.apache.maven.plugins&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;maven-jar-plugin&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;2.6&amp;lt;/version&amp;gt;
+	&amp;lt;executions&amp;gt;
+		&amp;lt;execution&amp;gt;
+			&amp;lt;id&amp;gt;make-a-jar&amp;lt;/id&amp;gt;
+			&amp;lt;phase&amp;gt;package&amp;lt;/phase&amp;gt;
+			&amp;lt;goals&amp;gt;
+				&amp;lt;goal&amp;gt;jar&amp;lt;/goal&amp;gt;
+			&amp;lt;/goals&amp;gt;
+			&amp;lt;configuration&amp;gt;
+				&amp;lt;excludes&amp;gt;
+					&amp;lt;exclude&amp;gt;generatorConfig.xml&amp;lt;/exclude&amp;gt;
+				&amp;lt;/excludes&amp;gt;
+			&amp;lt;/configuration&amp;gt;
+		&amp;lt;/execution&amp;gt;
+	&amp;lt;/executions&amp;gt;
+&amp;lt;/plugin&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;如何把所有依赖的jar包,输出到一个目录中？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;可以在maven的package生命周期内使用copy-dependencies复制依赖包，如下pom.xml文件内容：&lt;/p&gt;
+  &lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;!-- 把依赖的jar包拷到lib目录下 --&amp;gt;
+&amp;lt;plugin&amp;gt;
+	&amp;lt;groupId&amp;gt;org.apache.maven.plugins&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;maven-dependency-plugin&amp;lt;/artifactId&amp;gt;
+	&amp;lt;executions&amp;gt;
+		&amp;lt;execution&amp;gt;
+			&amp;lt;id&amp;gt;copy-dependencies&amp;lt;/id&amp;gt;
+			&amp;lt;phase&amp;gt;package&amp;lt;/phase&amp;gt;
+			&amp;lt;goals&amp;gt;
+				&amp;lt;goal&amp;gt;copy-dependencies&amp;lt;/goal&amp;gt;
+			&amp;lt;/goals&amp;gt;
+			&amp;lt;configuration&amp;gt;
+				&amp;lt;outputDirectory&amp;gt;${project.build.directory}/lib&amp;lt;/outputDirectory&amp;gt;
+				&amp;lt;overWriteReleases&amp;gt;false&amp;lt;/overWriteReleases&amp;gt;
+				&amp;lt;overWriteSnapshots&amp;gt;false&amp;lt;/overWriteSnapshots&amp;gt;
+				&amp;lt;overWriteIfNewer&amp;gt;true&amp;lt;/overWriteIfNewer&amp;gt;
+			&amp;lt;/configuration&amp;gt;
+		&amp;lt;/execution&amp;gt;
+	&amp;lt;/executions&amp;gt;
+&amp;lt;/plugin&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;如何拷贝其他目录的文件到工程中？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;在maven-resources-plugin中增加资源配置目录,并且在phase配置什么时候执行拷贝动作,pom.xml添加如下代码:&lt;/p&gt;
+  &lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;!-- 以utf-8编码拷贝配置文件，拷贝过程中是可以做变量替换的，
+也就是说你的配置文件可以是个模板，里面的${}所包含的内容是可以拷贝过程中替换的 --&amp;gt;
+&amp;lt;plugin&amp;gt;
+	&amp;lt;groupId&amp;gt;org.apache.maven.plugins&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;maven-resources-plugin&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;2.3&amp;lt;/version&amp;gt;
+	&amp;lt;executions&amp;gt;
+		&amp;lt;execution&amp;gt;
+			&amp;lt;id&amp;gt;copy-resources&amp;lt;/id&amp;gt;
+			&amp;lt;phase&amp;gt;compile&amp;lt;/phase&amp;gt;
+			&amp;lt;goals&amp;gt;
+				&amp;lt;goal&amp;gt;copy-resources&amp;lt;/goal&amp;gt;
+			&amp;lt;/goals&amp;gt;
+			&amp;lt;configuration&amp;gt;
+				&amp;lt;encoding&amp;gt;UTF-8&amp;lt;/encoding&amp;gt;
+				&amp;lt;outputDirectory&amp;gt;${project.build.directory}/classes&amp;lt;/outputDirectory&amp;gt;
+				&amp;lt;!-- 把配置文件拷到和jar包同一个路径下 --&amp;gt;
+				&amp;lt;resources&amp;gt;
+					&amp;lt;resource&amp;gt;
+						&amp;lt;directory&amp;gt;assembly&amp;lt;/directory&amp;gt;
+						&amp;lt;includes&amp;gt;
+							&amp;lt;include&amp;gt;config/db/db.properties&amp;lt;/include&amp;gt;
+							&amp;lt;include&amp;gt;log4j.properties&amp;lt;/include&amp;gt;
+						&amp;lt;/includes&amp;gt;
+						&amp;lt;filtering&amp;gt;false&amp;lt;/filtering&amp;gt;
+					&amp;lt;/resource&amp;gt;
+				&amp;lt;/resources&amp;gt;
+			&amp;lt;/configuration&amp;gt;
+		&amp;lt;/execution&amp;gt;
+	&amp;lt;/executions&amp;gt;
+&amp;lt;/plugin&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;p&gt;&lt;strong&gt;如何在打war是排除文件,怎么替换web.xml文件？&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;在打war包时可以使用packagingExcludes设置排除的文件,支持通配符. 可以通过设置webXml属性来指定打包的web.xml使用文件.具体pom.xml代码如下:&lt;/p&gt;
+  &lt;pre&gt;&lt;code class=&quot;xml&quot;&gt;&amp;lt;plugin&amp;gt;
+	&amp;lt;groupId&amp;gt;org.apache.maven.plugins&amp;lt;/groupId&amp;gt;
+	&amp;lt;artifactId&amp;gt;maven-war-plugin&amp;lt;/artifactId&amp;gt;
+	&amp;lt;version&amp;gt;2.6&amp;lt;/version&amp;gt;
+	&amp;lt;configuration&amp;gt;
+		&amp;lt;!--&amp;lt;archiveClasses&amp;gt;true&amp;lt;/archiveClasses&amp;gt;--&amp;gt;
+		&amp;lt;packagingExcludes&amp;gt;
+			WEB-INF/classes/generatorConfig.xml,
+			WEB-INF/classes/config/db/db.properties,
+			WEB-INF/classes/**/dao/**,
+			WEB-INF/classes/**/service/impl/**
+		&amp;lt;/packagingExcludes&amp;gt;
+		&amp;lt;webXml&amp;gt;assembly/webapp/WEB-INF/web.xml&amp;lt;/webXml&amp;gt;
+	&amp;lt;/configuration&amp;gt;
+&amp;lt;/plugin&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
 &lt;/ol&gt;
 	</description>
     </item>
