@@ -6,9 +6,68 @@
     <atom:link href="http://www.vouov.com/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>星期三, 18 三月 2015 17:21:08 +0800</pubDate>
-    <lastBuildDate>星期三, 18 三月 2015 17:21:08 +0800</lastBuildDate>
+    <pubDate>星期日, 12 四月 2015 20:18:20 +0800</pubDate>
+    <lastBuildDate>星期日, 12 四月 2015 20:18:20 +0800</lastBuildDate>
 
+    <item>
+      <title>java解析PDM中的表和字段以及类型</title>
+      <link>http://www.vouov.com/blog/2015-04-12-java-pdm-parse.html</link>
+      <pubDate>星期日, 12 四月 2015 00:00:00 +0800</pubDate>
+      <guid isPermaLink="false">blog/2015-04-12-java-pdm-parse.html</guid>
+      	<description>
+	&lt;p&gt;PDM的项目文件其实都是XML文档,所以只要找到对应的标签就能找到对应的表和字段,解析XML文件我们采用的dom4j的xpath查找.&lt;br/&gt;具体代码实现如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public class PDMHelper {
+    public static final String TABLES_TAG = &amp;quot;c:Tables&amp;quot;;
+    public static final String TABLE_TAG = &amp;quot;o:Table&amp;quot;;
+    public static final String TABLE_NAME_TAG = &amp;quot;a:Code&amp;quot;;
+    public static final String TABLE_DESC_TAG = &amp;quot;a:Name&amp;quot;;
+    public static final String COLUMNS_TAG = &amp;quot;c:Columns&amp;quot;;
+    public static final String COLUMN_TAG = &amp;quot;o:Column&amp;quot;;
+    public static final String COLUMN_NAME_TAG = &amp;quot;a:Code&amp;quot;;
+    public static final String COLUMN_DESC_TAG = &amp;quot;a:Name&amp;quot;;
+    public static final String COLUMN_DATA_TYPE_TAG = &amp;quot;a:DataType&amp;quot;;
+    public static final String COLUMN_DATA_LEN_TAG = &amp;quot;a:Length&amp;quot;;
+    public static final String COLUMN_MANDATORY_TAG = &amp;quot;a:Column.Mandatory&amp;quot;;
+	public static void parsePDM(String file) throws Exception {
+		SAXReader reader = new SAXReader();
+		Document document = reader.read(new File(file));
+		List&amp;lt;Node&amp;gt; tables = document.selectNodes(&amp;quot;//&amp;quot; + TABLES_TAG + &amp;quot;/&amp;quot; + TABLE_TAG);
+		for (Node table : tables) {
+			Node tableName = table.selectSingleNode(TABLE_NAME_TAG);
+			Node tableDesc = table.selectSingleNode(TABLE_DESC_TAG);
+			System.out.println(tableName.getText() + &amp;quot;\t&amp;quot; + tableDesc.getText());
+			List&amp;lt;Node&amp;gt; columns = table.selectNodes(COLUMNS_TAG + &amp;quot;/&amp;quot; + COLUMN_TAG);
+			for (Node column : columns) {
+				Node columnName = column.selectSingleNode(COLUMN_NAME_TAG);
+				Node columnDesc = column.selectSingleNode(COLUMN_DESC_TAG);
+				Node dataType = column.selectSingleNode(COLUMN_DATA_TYPE_TAG);
+				//Node dataLength = column.selectSingleNode(&amp;quot;./&amp;quot; + COLUMN_DATA_LEN_TAG);
+				System.out.println(&amp;quot;\t\t&amp;quot; + columnName.getText() + &amp;quot;\t&amp;quot; 
+				+ dataType.getText() + &amp;quot;\t&amp;quot; + columnDesc.getText());
+			}
+		}
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+	</description>
+    </item>
+    <item>
+      <title>vsftp关于&quot;550 create directory operation failed&quot;</title>
+      <link>http://www.vouov.com/blog/2015-04-12-vsftp-error-550.html</link>
+      <pubDate>星期日, 12 四月 2015 00:00:00 +0800</pubDate>
+      <guid isPermaLink="false">blog/2015-04-12-vsftp-error-550.html</guid>
+      	<description>
+	&lt;p&gt;配置好vsftp, 能登录浏览，但是不可以新建文件/文件夹, 删除文件, 重命名等,并且报错:&quot;550 create directory operation failed&quot;. 把服务器ftp文件目录全部改成777权限还是不可以.正确的解决方法是关闭linux的SElinux.&lt;/p&gt;&lt;p&gt;具体配置如下:&lt;br/&gt;修改/etc/sysconfig/selinux或者/etc/selinux/config文件：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#SELINUX=enforcing
+SELINUX=disabled
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改后要想生效可以重启,也可以不重启应用配置,用命令:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;setenforce 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;查看Selinux状态：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# getenforce
+Permissive
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;SELinux是「Security-Enhanced Linux」的简称，是美国国家安全局「NSA=The National Security Agency」 和SCC（Secure Computing Corporation）开发的 Linux的一个扩张强制访问控制安全模块。原先是在Fluke上开发的，2000年以 GNU GPL 发布。SELinux是一种基于域-类型模型（domain-type）的强制访问控制（MAC）安全系统，它由NSA编写并设计成内核模块包含到内核中，相应的某些安全相关的应用也被打了SELinux的补丁，最后还有一个相应的安全策略。SELinux 是 2.6 版本的 Linux 内核中提供的强制访问控制&lt;/p&gt;
+	</description>
+    </item>
     <item>
       <title>Maven中使用APT</title>
       <link>http://www.vouov.com/blog/2015-03-17-maven-apt.html</link>

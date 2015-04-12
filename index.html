@@ -43,6 +43,61 @@
 		<div class="home">
 		  <div class="posts">
 					<div class="post">
+						<a href="blog/2015-04-12-java-pdm-parse.html" class="post-link">
+						  <h3 class="h2 post-title">java解析PDM中的表和字段以及类型</h3>
+						  <p class="post-meta">2015年04月12日</p>
+						</a>
+						<p class="post-summary"><p>PDM的项目文件其实都是XML文档,所以只要找到对应的标签就能找到对应的表和字段,解析XML文件我们采用的dom4j的xpath查找.<br/>具体代码实现如下:</p>
+<pre><code>public class PDMHelper {
+    public static final String TABLES_TAG = &quot;c:Tables&quot;;
+    public static final String TABLE_TAG = &quot;o:Table&quot;;
+    public static final String TABLE_NAME_TAG = &quot;a:Code&quot;;
+    public static final String TABLE_DESC_TAG = &quot;a:Name&quot;;
+    public static final String COLUMNS_TAG = &quot;c:Columns&quot;;
+    public static final String COLUMN_TAG = &quot;o:Column&quot;;
+    public static final String COLUMN_NAME_TAG = &quot;a:Code&quot;;
+    public static final String COLUMN_DESC_TAG = &quot;a:Name&quot;;
+    public static final String COLUMN_DATA_TYPE_TAG = &quot;a:DataType&quot;;
+    public static final String COLUMN_DATA_LEN_TAG = &quot;a:Length&quot;;
+    public static final String COLUMN_MANDATORY_TAG = &quot;a:Column.Mandatory&quot;;
+	public static void parsePDM(String file) throws Exception {
+		SAXReader reader = new SAXReader();
+		Document document = reader.read(new File(file));
+		List&lt;Node&gt; tables = document.selectNodes(&quot;//&quot; + TABLES_TAG + &quot;/&quot; + TABLE_TAG);
+		for (Node table : tables) {
+			Node tableName = table.selectSingleNode(TABLE_NAME_TAG);
+			Node tableDesc = table.selectSingleNode(TABLE_DESC_TAG);
+			System.out.println(tableName.getText() + &quot;\t&quot; + tableDesc.getText());
+			List&lt;Node&gt; columns = table.selectNodes(COLUMNS_TAG + &quot;/&quot; + COLUMN_TAG);
+			for (Node column : columns) {
+				Node columnName = column.selectSingleNode(COLUMN_NAME_TAG);
+				Node columnDesc = column.selectSingleNode(COLUMN_DESC_TAG);
+				Node dataType = column.selectSingleNode(COLUMN_DATA_TYPE_TAG);
+				//Node dataLength = column.selectSingleNode(&quot;./&quot; + COLUMN_DATA_LEN_TAG);
+				System.out.println(&quot;\t\t&quot; + columnName.getText() + &quot;\t&quot; 
+				+ dataType.getText() + &quot;\t&quot; + columnDesc.getText());
+			}
+		}
+	}
+}
+</code></pre></p>
+					 </div>
+					<div class="post">
+						<a href="blog/2015-04-12-vsftp-error-550.html" class="post-link">
+						  <h3 class="h2 post-title">vsftp关于&quot;550 create directory operation failed&quot;</h3>
+						  <p class="post-meta">2015年04月12日</p>
+						</a>
+						<p class="post-summary"><p>配置好vsftp, 能登录浏览，但是不可以新建文件/文件夹, 删除文件, 重命名等,并且报错:"550 create directory operation failed". 把服务器ftp文件目录全部改成777权限还是不可以.正确的解决方法是关闭linux的SElinux.</p><p>具体配置如下:<br/>修改/etc/sysconfig/selinux或者/etc/selinux/config文件：</p>
+<pre><code>#SELINUX=enforcing
+SELINUX=disabled
+</code></pre><p>修改后要想生效可以重启,也可以不重启应用配置,用命令:</p>
+<pre><code>setenforce 0
+</code></pre><p>查看Selinux状态：</p>
+<pre><code># getenforce
+Permissive
+</code></pre><p>SELinux是「Security-Enhanced Linux」的简称，是美国国家安全局「NSA=The National Security Agency」 和SCC（Secure Computing Corporation）开发的 Linux的一个扩张强制访问控制安全模块。原先是在Fluke上开发的，2000年以 GNU GPL 发布。SELinux是一种基于域-类型模型（domain-type）的强制访问控制（MAC）安全系统，它由NSA编写并设计成内核模块包含到内核中，相应的某些安全相关的应用也被打了SELinux的补丁，最后还有一个相应的安全策略。SELinux 是 2.6 版本的 Linux 内核中提供的强制访问控制</p></p>
+					 </div>
+					<div class="post">
 						<a href="blog/2015-03-17-maven-apt.html" class="post-link">
 						  <h3 class="h2 post-title">Maven中使用APT</h3>
 						  <p class="post-meta">2015年03月17日</p>
@@ -183,154 +238,6 @@ Iterator&lt;T&gt; data, OutputStream outputStream) throws IOException, InvalidFo
 		rowNum++;
 	}
 	newWorkbook.write(outputStream);
-}
-</code></pre></p>
-					 </div>
-					<div class="post">
-						<a href="blog/2015-03-09-java-html-to-pdf.html" class="post-link">
-						  <h3 class="h2 post-title">Java中HTML转PDF文档实现</h3>
-						  <p class="post-meta">2015年03月09日</p>
-						</a>
-						<p class="post-summary"><p>之前我们讲述了如果通过html转换成word文档,现在我们讲述如何通过java实现转换HTML为PDF文档.<br/>首先我们把HTML文本通过jsoup整理成xhtml,然后通过flying-saucer-pdf-itext5或者itextpdf xmlworker转换成PDF.<br/>对于flying-saucer和itextpdf xmlworker都可以转换xhtml为PDF,但是在使用中我们发现flying-saucer对于样式的转换更加自然,而itextpdf的转换会丢失部分样式,所以接下来我们会给出两种实现方式,方便根据需要选择其中一种.</p><p>itextpdf xmlworker的maven依赖:</p>
-<pre><code class="xml">&lt;dependency&gt;
-	&lt;groupId&gt;com.itextpdf&lt;/groupId&gt;
-	&lt;artifactId&gt;itextpdf&lt;/artifactId&gt;
-	&lt;version&gt;5.5.4&lt;/version&gt;
-&lt;/dependency&gt;
-&lt;dependency&gt;
-	&lt;groupId&gt;com.itextpdf.tool&lt;/groupId&gt;
-	&lt;artifactId&gt;xmlworker&lt;/artifactId&gt;
-	&lt;version&gt;5.5.4&lt;/version&gt;
-&lt;/dependency&gt;
-</code></pre><p>flying-saucer的maven依赖:</p>
-<pre><code class="xml">&lt;dependency&gt;
-	&lt;groupId&gt;org.xhtmlrenderer&lt;/groupId&gt;
-	&lt;artifactId&gt;flying-saucer-pdf-itext5&lt;/artifactId&gt;
-	&lt;version&gt;9.0.7&lt;/version&gt;
-&lt;/dependency&gt;
-</code></pre><p>html转成xhtml的jsoup参考实现如下:</p>
-<pre><code class="java">/**
- * 清理HTML内容,转换成标准xhtml
- * @param html
- * @return
- */
-public static String tidyHtml(String html){
-	Document doc = Jsoup.parse(html);
-	// Clean the document.
-	//doc = new Cleaner(Whitelist.basicWithImages()).clean(doc);
-	doc.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
-	doc.outputSettings().prettyPrint(true);
-
-	doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
-	// Get back the string of the body.
-	return doc.html();
-}
-</code></pre><p>html转换成PDF的itextpdf xmlworker代码参考实现如下:</p>
-<pre><code class="java">/**
- * 使用IText默认实现
- *
- * @param html
- * @param baseURL
- * @param os
- * @throws DocumentException
- * @throws IOException
- */
-public static void html2Pdf(String html, String baseURL, OutputStream os) throws DocumentException, IOException {
-	String xhtml = HtmlUtils.tidyHtml(html);
-	xhtml = HtmlUtils.fillImageURL(xhtml, baseURL, null);
-	// step 1
-	Document document = new Document();
-	// step 2
-	PdfWriter writer = PdfWriter.getInstance(document, os);
-	// step 3
-	document.open();
-	// step 4
-	XMLWorkerHelper.getInstance().parseXHtml(writer, document, new ByteArrayInputStream(xhtml.getBytes(&quot;UTF-8&quot;)), Charset.forName(&quot;UTF-8&quot;));
-	//step 5
-	document.close();
-}
-</code></pre><p>html转换成PDF的flying-saucer代码参考实现如下:</p>
-<pre><code class="java">/**
- * 使用flying-saucer-pdf-itext5实现
- *
- * @param html
- * @param baseURL
- * @param os
- * @throws IOException
- * @throws DocumentException
- */
-public static void html2Pdf(String html, String baseURL, OutputStream os) throws IOException, DocumentException {
-	ITextRenderer renderer = new ITextRenderer();
-	String xhtml = HtmlUtils.tidyHtml(html);
-
-	renderer.setDocumentFromString(xhtml, baseURL);
-
-	// 解决中文支持问题
-	ITextFontResolver fontResolver = renderer.getFontResolver();
-	fontResolver.addFont(&quot;C:/Windows/Fonts/SIMSUN.TTC&quot;, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
-	//解决图片的相对路径问题
-	renderer.getSharedContext().setBaseURL(baseURL);
-	renderer.layout();
-	renderer.createPDF(os);
-}
-</code></pre></p>
-					 </div>
-					<div class="post">
-						<a href="blog/2015-03-08-java-html-to-word.html" class="post-link">
-						  <h3 class="h2 post-title">Java中HTML转Word文档实现</h3>
-						  <p class="post-meta">2015年03月08日</p>
-						</a>
-						<p class="post-summary"><p>有这样一个需求,我们要把数据库中的HTML格式文本字段导出为word,尝试了很多方法终于找到一种比较理想的方法.<br/>首先我们把HTML文本通过jsoup整理成xhtml,然后通过docx4j转换成word.<br/>HTML转换成xhtml还有一个jtidy,但是因为好久没有更新,并且有bug,所以推荐使用jsoup来整理.</p><p>docx4j的maven依赖:</p>
-<pre><code class="xml">&lt;dependency&gt;
-	&lt;groupId&gt;org.docx4j&lt;/groupId&gt;
-	&lt;artifactId&gt;docx4j-ImportXHTML&lt;/artifactId&gt;
-	&lt;version&gt;3.2.2&lt;/version&gt;
-&lt;/dependency&gt;
-&lt;dependency&gt;
-	&lt;groupId&gt;org.jsoup&lt;/groupId&gt;
-	&lt;artifactId&gt;jsoup&lt;/artifactId&gt;
-	&lt;version&gt;1.8.1&lt;/version&gt;
-&lt;/dependency&gt;
-</code></pre><p>html转成xhtml的jsoup参考实现如下:</p>
-<pre><code class="java">/**
- * 清理HTML内容,转换成标准xhtml
- * @param html
- * @return
- */
-public static String tidyHtml(String html){
-	Document doc = Jsoup.parse(html);
-	// Clean the document.
-	//doc = new Cleaner(Whitelist.basicWithImages()).clean(doc);
-	doc.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
-	doc.outputSettings().prettyPrint(true);
-
-	doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
-	// Get back the string of the body.
-	return doc.html();
-}
-</code></pre><p>xhtml转换成word的java代码参考实现如下:</p>
-<pre><code class="java">/**
- * html文本转换为word
- *
- * @param html
- * @param baseURL
- * @param os
- * @throws Docx4JException
- */
-public static void html2Docx(String html, String baseURL, OutputStream os) throws Docx4JException {
-
-	// To docx, with content controls
-	WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
-
-	XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackage);
-	//XHTMLImporter.setDivHandler(new DivToSdt());
-	wordMLPackage.getMainDocumentPart().getContent().addAll(
-			XHTMLImporter.convert(html, baseURL));
-
-	/*System.out.println(XmlUtils.marshaltoString(wordMLPackage
-			.getMainDocumentPart().getJaxbElement(), true, true));*/
-
-	wordMLPackage.save(os);
 }
 </code></pre></p>
 					 </div>
